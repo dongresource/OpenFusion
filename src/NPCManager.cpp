@@ -107,7 +107,7 @@ void NPCManager::addNPC(std::vector<Chunk*> viewableChunks, int32_t id) {
 void NPCManager::destroyNPC(int32_t id) {
     // sanity check
     if (NPCs.find(id) == NPCs.end()) {
-        std::cout << "npc not found : " << id << std::endl;
+        std::cout << "npc not found: " << id << std::endl;
         return;
     }
 
@@ -133,8 +133,6 @@ void NPCManager::destroyNPC(int32_t id) {
     // finally, remove it from the map and free it
     NPCs.erase(id);
     delete entity;
-
-    std::cout << "npc removed!" << std::endl;
 }
 
 void NPCManager::updateNPCPosition(int32_t id, int X, int Y, int Z, int angle) {
