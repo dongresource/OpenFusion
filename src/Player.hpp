@@ -68,4 +68,8 @@ struct Player {
     int groupCnt;
     int32_t groupIDs[4];
     int32_t iGroupConditionBitFlag;
+
+    // spooky
+    int spookStage = 0;
+    int offsetX, offsetY;
 };

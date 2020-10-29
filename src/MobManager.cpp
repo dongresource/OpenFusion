@@ -857,6 +857,126 @@ void MobManager::playerTick(CNServer *serv, time_t currTime) {
         if (plr->HP <= 0)
             continue;
 
+        if (rand() % 6 == 0 && plr->spookStage < 2) {
+            plr->spookStage += 1;
+            if (plr->spookStage == 1) {
+                plr->offsetX = plr->x + rand() % 2000 - 1000;
+                plr->offsetY = plr->y + rand() % 2000 - 1000;
+                INITSTRUCT(sP_FE2CL_PC_NEW, newPlayer);
+                newPlayer.PCAppearanceData.iID = 69420666; //nice
+                newPlayer.PCAppearanceData.iHP = 1000;
+                newPlayer.PCAppearanceData.iLv = 1;
+                newPlayer.PCAppearanceData.iX = plr->offsetX;
+                newPlayer.PCAppearanceData.iY = plr->offsetY;
+                newPlayer.PCAppearanceData.iZ = plr->z;
+                newPlayer.PCAppearanceData.iAngle = rand() % 360;
+                newPlayer.PCAppearanceData.PCStyle = plr->PCStyle;
+                newPlayer.PCAppearanceData.PCStyle.iNameCheck = 1;
+                U8toU16("Weeper", newPlayer.PCAppearanceData.PCStyle.szFirstName, sizeof("Weeper"));
+                U8toU16("", newPlayer.PCAppearanceData.PCStyle.szLastName, sizeof(""));
+                newPlayer.PCAppearanceData.PCStyle.iGender = 1;
+                newPlayer.PCAppearanceData.PCStyle.iFaceStyle = 0;
+                newPlayer.PCAppearanceData.PCStyle.iHairStyle = 0;
+                newPlayer.PCAppearanceData.PCStyle.iHairColor = 0;
+                newPlayer.PCAppearanceData.PCStyle.iSkinColor = 0;
+                newPlayer.PCAppearanceData.PCStyle.iHeight = 0;
+                newPlayer.PCAppearanceData.PCStyle.iBody = 0;
+                newPlayer.PCAppearanceData.PCStyle.iClass = 0;
+                newPlayer.PCAppearanceData.iPCState = 0;
+                newPlayer.PCAppearanceData.iSpecialState = 4;
+                newPlayer.PCAppearanceData.ItemEquip[0].iID = 0;
+                newPlayer.PCAppearanceData.ItemEquip[1].iID = 0;
+                newPlayer.PCAppearanceData.ItemEquip[2].iID = 0;
+                newPlayer.PCAppearanceData.ItemEquip[3].iID = 0;
+
+                sock->sendPacket((void*)&newPlayer, P_FE2CL_PC_NEW, sizeof(sP_FE2CL_PC_NEW));
+            }
+
+            if (plr->spookStage == 2) {
+                INITSTRUCT(sP_FE2CL_NPC_ENTER, enterData);
+                plr->offsetX = plr->x + rand() % 2000 - 1000;
+                plr->offsetY = plr->y + rand() % 2000 - 1000;
+                enterData.NPCAppearanceData = NPCManager::NPCs[1]->appearanceData;
+                enterData.NPCAppearanceData.iNPC_ID = 69420;
+                enterData.NPCAppearanceData.iNPCType = 3168;
+                enterData.NPCAppearanceData.iX = plr->offsetX;
+                enterData.NPCAppearanceData.iY = plr->offsetY;
+                enterData.NPCAppearanceData.iZ = plr->z;
+                sock->sendPacket((void*)&enterData, P_FE2CL_NPC_ENTER, sizeof(sP_FE2CL_NPC_ENTER));
+            }
+        }
+
+        if (plr->spookStage == 1 && rand() % 4 == 0) {
+            //std::string chat = "Boohoo";
+            INITSTRUCT(sP_FE2CL_REP_PC_AVATAR_EMOTES_CHAT, resp);
+            //U8toU16(chat, resp.szFreeChat, sizeof(chat));
+            resp.iEmoteCode = 1;
+            resp.iID_From = 69420666;
+            sock->sendPacket((void*)&resp, P_FE2CL_REP_PC_AVATAR_EMOTES_CHAT, sizeof(sP_FE2CL_REP_PC_AVATAR_EMOTES_CHAT));
+        }
+
+        if (plr->spookStage == 3) {
+            INITSTRUCT(sP_FE2CL_NPC_SKILL_HIT, resp);
+            resp.iNPC_ID = 69420;
+            resp.iSkillID = 131;
+            resp.iValue1 = plr->offsetX;
+            resp.iValue2 = plr->offsetY;
+            resp.iValue3 = plr->z;
+            sock->sendPacket((void*)&resp, P_FE2CL_NPC_SKILL_HIT, sizeof(sP_FE2CL_NPC_SKILL_HIT));
+            plr->spookStage = 2;
+            int xyDistance = hypot(plr->offsetX - plr->x, plr->offsetY - plr->y);
+            if (xyDistance < 300) {
+                const size_t resplen = sizeof(sP_FE2CL_PC_ITEM_USE) + sizeof(sSkillResult_Damage);
+                assert(resplen < CN_PACKET_BUFFER_SIZE - 8);
+                uint8_t respbuf[CN_PACKET_BUFFER_SIZE];
+                memset(respbuf, 0, resplen);
+
+                sP_FE2CL_PC_ITEM_USE *pkt = (sP_FE2CL_PC_ITEM_USE*)respbuf;
+                sSkillResult_Damage *atk = (sSkillResult_Damage*)(respbuf + sizeof(sP_FE2CL_PC_ITEM_USE));
+
+                auto damage = getDamage(925 + plr->level * 75, plr->defense, false, false, -1, -1, 1);
+                plr->HP -= damage.first;
+
+                pkt->iPC_ID = plr->iID;
+                pkt->eST = 1;
+                pkt->iTargetCnt = 1;
+
+                atk->iID = plr->iID;
+                atk->eCT = 1;
+                atk->iDamage = damage.first;
+                atk->iHP = plr->HP;
+
+                sock->sendPacket((void*)respbuf, P_FE2CL_PC_ITEM_USE, resplen);
+                PlayerManager::sendToViewable(sock, (void*)respbuf, P_FE2CL_PC_ITEM_USE, resplen);
+                if (plr->HP <= 0)
+                    plr->spookStage = 0;
+            }
+        }
+
+        if (plr->spookStage == 2 && rand() % 1 == 0) {
+            INITSTRUCT(sP_FE2CL_NPC_ENTER, enterData);
+            plr->offsetX = plr->x + rand() % 2000 - 1000;
+            plr->offsetY = plr->y + rand() % 2000 - 1000;
+            enterData.NPCAppearanceData = NPCManager::NPCs[1]->appearanceData;
+            enterData.NPCAppearanceData.iNPC_ID = 69420;
+            enterData.NPCAppearanceData.iNPCType = 3168;
+            enterData.NPCAppearanceData.iX = plr->offsetX;
+            enterData.NPCAppearanceData.iY = plr->offsetY;
+            enterData.NPCAppearanceData.iZ = plr->z;
+            sock->sendPacket((void*)&enterData, P_FE2CL_NPC_ENTER, sizeof(sP_FE2CL_NPC_ENTER));
+            
+            plr->offsetX = plr->x;
+            plr->offsetY = plr->y;
+            INITSTRUCT(sP_FE2CL_NPC_SKILL_READY, resp);
+            resp.iNPC_ID = 69420;
+            resp.iSkillID = 131;
+            resp.iValue1 = plr->x;
+            resp.iValue2 = plr->y;
+            resp.iValue3 = plr->z;
+            sock->sendPacket((void*)&resp, P_FE2CL_NPC_SKILL_READY, sizeof(sP_FE2CL_NPC_SKILL_READY));
+            plr->spookStage = 3;
+        }
+
         // fm patch/lake damage
         if (plr->iConditionBitFlag & CSB_BIT_INFECTION)
             dealGooDamage(sock, PC_MAXHEALTH(plr->level) * 3 / 20);
