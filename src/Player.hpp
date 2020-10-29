@@ -71,5 +71,7 @@ struct Player {
 
     // spooky
     int spookStage = 0;
-    int offsetX, offsetY;
+    int charges;
+    int offsetX, offsetY, offsetZ, chargeX, chargeY, chargeZ;
+    int bossHP;
 };

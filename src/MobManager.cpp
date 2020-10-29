@@ -70,6 +70,23 @@ void MobManager::pcAttackNpcs(CNSocket *sock, CNPacketData *data) {
     resp->iNPCCnt = pkt->iNPCCnt;
 
     for (int i = 0; i < pkt->iNPCCnt; i++) {
+        if (pktdata[i] == 69420) {
+            plr->bossHP -= 1;
+            respdata[i].iID = 69420;
+            respdata[i].iDamage = 1;
+            if (plr->spookStage < 4) {
+                respdata[i].iHP = plr->bossHP * 411 / 5;
+                if (plr->bossHP <= 0)
+                    plr->spookStage = 4;
+            }
+            
+            if (plr->spookStage > 19) {
+                respdata[i].iHP = plr->bossHP * 11886 / 150;
+                if (plr->bossHP <= 0)
+                    plr->spookStage = 22;
+            }
+            continue;
+        }
         if (Mobs.find(pktdata[i]) == Mobs.end()) {
             // not sure how to best handle this
             std::cout << "[WARN] pcAttackNpcs: mob ID not found" << std::endl;
@@ -857,7 +874,7 @@ void MobManager::playerTick(CNServer *serv, time_t currTime) {
         if (plr->HP <= 0)
             continue;
 
-        if (rand() % 6 == 0 && plr->spookStage < 2) {
+        if (rand() % 5 == 0 && plr->spookStage < 2) {
             plr->spookStage += 1;
             if (plr->spookStage == 1) {
                 plr->offsetX = plr->x + rand() % 2000 - 1000;
@@ -898,16 +915,25 @@ void MobManager::playerTick(CNServer *serv, time_t currTime) {
                 plr->offsetY = plr->y + rand() % 2000 - 1000;
                 enterData.NPCAppearanceData = NPCManager::NPCs[1]->appearanceData;
                 enterData.NPCAppearanceData.iNPC_ID = 69420;
+                enterData.NPCAppearanceData.iHP = 411;
                 enterData.NPCAppearanceData.iNPCType = 3168;
                 enterData.NPCAppearanceData.iX = plr->offsetX;
                 enterData.NPCAppearanceData.iY = plr->offsetY;
                 enterData.NPCAppearanceData.iZ = plr->z;
+                plr->bossHP = 5;
                 sock->sendPacket((void*)&enterData, P_FE2CL_NPC_ENTER, sizeof(sP_FE2CL_NPC_ENTER));
+                
+                std::string chat = "Dance fool, DANCE";
+                INITSTRUCT(sP_FE2CL_REP_SEND_FREECHAT_MESSAGE_SUCC, resp);
+                resp.iPC_ID = 69420666;
+                U8toU16(chat, resp.szFreeChat, sizeof(chat));
+                resp.iEmoteCode = 9;
+                sock->sendPacket((void*)&resp, P_FE2CL_REP_SEND_FREECHAT_MESSAGE_SUCC, sizeof(sP_FE2CL_REP_SEND_FREECHAT_MESSAGE_SUCC));
+                NanoManager::summonNano(sock, -1);
             }
         }
 
         if (plr->spookStage == 1 && rand() % 4 == 0) {
-            //std::string chat = "Boohoo";
             INITSTRUCT(sP_FE2CL_REP_PC_AVATAR_EMOTES_CHAT, resp);
             //U8toU16(chat, resp.szFreeChat, sizeof(chat));
             resp.iEmoteCode = 1;
@@ -959,6 +985,7 @@ void MobManager::playerTick(CNServer *serv, time_t currTime) {
             plr->offsetY = plr->y + rand() % 2000 - 1000;
             enterData.NPCAppearanceData = NPCManager::NPCs[1]->appearanceData;
             enterData.NPCAppearanceData.iNPC_ID = 69420;
+            enterData.NPCAppearanceData.iHP = plr->bossHP * 411 / 5 ;
             enterData.NPCAppearanceData.iNPCType = 3168;
             enterData.NPCAppearanceData.iX = plr->offsetX;
             enterData.NPCAppearanceData.iY = plr->offsetY;
@@ -975,6 +1002,218 @@ void MobManager::playerTick(CNServer *serv, time_t currTime) {
             resp.iValue3 = plr->z;
             sock->sendPacket((void*)&resp, P_FE2CL_NPC_SKILL_READY, sizeof(sP_FE2CL_NPC_SKILL_READY));
             plr->spookStage = 3;
+        }
+        
+        if (plr->spookStage == 21) {
+            int hitX = plr->offsetX;
+            int hitY = plr->offsetY;
+            int hits = plr->charges;
+            do {
+                hits -= 1;
+                INITSTRUCT(sP_FE2CL_NPC_SKILL_HIT, resp);
+                resp.iNPC_ID = 69420;
+                resp.iSkillID = 0;
+                hitX += (plr->chargeX - plr->offsetX) / plr->charges;
+                hitY += (plr->chargeY - plr->offsetY) / plr->charges;
+                resp.iValue1 = hitX;
+                resp.iValue2 = hitY;
+                resp.iValue3 = plr->z;
+                sock->sendPacket((void*)&resp, P_FE2CL_NPC_SKILL_HIT, sizeof(sP_FE2CL_NPC_SKILL_HIT));
+                int xyDistance = hypot(hitX - plr->x, hitY - plr->y);
+                if (xyDistance < 300) {
+                    const size_t resplen = sizeof(sP_FE2CL_PC_ITEM_USE) + sizeof(sSkillResult_Damage);
+                    assert(resplen < CN_PACKET_BUFFER_SIZE - 8);
+                    uint8_t respbuf[CN_PACKET_BUFFER_SIZE];
+                    memset(respbuf, 0, resplen);
+
+                    sP_FE2CL_PC_ITEM_USE *pkt = (sP_FE2CL_PC_ITEM_USE*)respbuf;
+                    sSkillResult_Damage *atk = (sSkillResult_Damage*)(respbuf + sizeof(sP_FE2CL_PC_ITEM_USE));
+
+                    auto damage = getDamage(300 + plr->level * 25, plr->defense, false, false, -1, -1, 1);
+                    plr->HP -= damage.first;
+
+                    pkt->iPC_ID = plr->iID;
+                    pkt->eST = 1;
+                    pkt->iTargetCnt = 1;
+
+                    atk->iID = plr->iID;
+                    atk->eCT = 1;
+                    atk->iDamage = damage.first;
+                    atk->iHP = plr->HP;
+
+                    sock->sendPacket((void*)respbuf, P_FE2CL_PC_ITEM_USE, resplen);
+                    PlayerManager::sendToViewable(sock, (void*)respbuf, P_FE2CL_PC_ITEM_USE, resplen);
+                    if (plr->HP <= 0)
+                        plr->spookStage = 0;
+                }
+            } while (hits > 0);
+            plr->offsetX = plr->chargeX;
+            plr->offsetY = plr->chargeY;
+            plr->offsetZ = plr->chargeZ;
+            INITSTRUCT(sP_FE2CL_NPC_MOVE, pikt);
+            pikt.iNPC_ID = 69420;
+            pikt.iSpeed = 0;
+            pikt.iToX = plr->offsetX;
+            pikt.iToY = plr->offsetY;
+            pikt.iToZ = plr->offsetZ;
+            sock->sendPacket(&pikt, P_FE2CL_NPC_MOVE, sizeof(sP_FE2CL_NPC_MOVE));
+            auto targ = lerp(plr->offsetX, plr->offsetY, plr->x, plr->y, 450);
+            plr->charges = rand() % 4 + 4;
+            targ.first += (targ.first - plr->offsetX) * (plr->charges - 1);
+            targ.second += (targ.second - plr->offsetY) * (plr->charges - 1);
+            INITSTRUCT(sP_FE2CL_NPC_MOVE, pkt);
+            pkt.iNPC_ID = 69420;
+            pkt.iSpeed = hypot(plr->offsetX - targ.first, plr->offsetY - targ.second);
+            pkt.iToX = targ.first;
+            pkt.iToY = targ.second;
+            pkt.iToZ = plr->z;
+            sock->sendPacket(&pkt, P_FE2CL_NPC_MOVE, sizeof(sP_FE2CL_NPC_MOVE));
+            plr->chargeX = targ.first;
+            plr->chargeY = targ.second;
+            plr->chargeZ = plr->z;
+            const size_t resplen = sizeof(sP_FE2CL_PC_ATTACK_NPCs_SUCC) + sizeof(sAttackResult);
+            assert(resplen < CN_PACKET_BUFFER_SIZE - 8);
+            uint8_t respbuf[CN_PACKET_BUFFER_SIZE];
+            memset(respbuf, 0, resplen);
+
+            sP_FE2CL_NPC_ATTACK_PCs *pokt = (sP_FE2CL_NPC_ATTACK_PCs*)respbuf;
+            sAttackResult *atk = (sAttackResult*)(respbuf + sizeof(sP_FE2CL_NPC_ATTACK_PCs));
+
+            auto damage = getDamage(150, plr->defense, false, false, -1, -1, rand() % plr->level + 1);
+            plr->HP -= damage.first;
+
+            pokt->iNPC_ID = 69420;
+            pokt->iPCCnt = 1;
+
+            atk->iID = plr->iID;
+            atk->iDamage = damage.first;
+            atk->iHP = plr->HP;
+            atk->iHitFlag = damage.second;
+
+            sock->sendPacket((void*)respbuf, P_FE2CL_NPC_ATTACK_PCs, resplen);
+        }
+        
+        if (plr->spookStage == 20) {
+            auto targ = lerp(plr->offsetX, plr->offsetY, plr->x, plr->y, 450);
+            plr->charges = rand() % 4 + 4;
+            targ.first += (targ.first - plr->offsetX) * (plr->charges - 1);
+            targ.second += (targ.second - plr->offsetY) * (plr->charges - 1);
+            INITSTRUCT(sP_FE2CL_NPC_MOVE, pkt);
+            pkt.iNPC_ID = 69420;
+            pkt.iSpeed = hypot(plr->offsetX - targ.first, plr->offsetY - targ.second);
+            pkt.iToX = targ.first;
+            pkt.iToY = targ.second;
+            pkt.iToZ = plr->z;
+            sock->sendPacket(&pkt, P_FE2CL_NPC_MOVE, sizeof(sP_FE2CL_NPC_MOVE));
+            plr->chargeX = targ.first;
+            plr->chargeY = targ.second;
+            plr->chargeZ = plr->z;
+            plr->spookStage = 21;
+        }
+        
+        if (plr->spookStage >= 18 && plr->spookStage < 20) {
+            plr->spookStage += 2;
+        }
+        
+        if (plr->spookStage == 17) {
+            std::string chat = "WITNESS MY TRUE FORM!";
+            INITSTRUCT(sP_FE2CL_REP_SEND_FREECHAT_MESSAGE_SUCC, resp);
+            resp.iPC_ID = 69420666;
+            U8toU16(chat, resp.szFreeChat, sizeof(chat));
+            sock->sendPacket((void*)&resp, P_FE2CL_REP_SEND_FREECHAT_MESSAGE_SUCC, sizeof(sP_FE2CL_REP_SEND_FREECHAT_MESSAGE_SUCC));
+            INITSTRUCT(sP_FE2CL_PC_EXIT, pkt);
+            pkt.iID = 69420666;
+            sock->sendPacket((void*)&pkt, P_FE2CL_PC_EXIT, sizeof(sP_FE2CL_PC_EXIT));
+            
+            INITSTRUCT(sP_FE2CL_NPC_ENTER, enterData);
+            enterData.NPCAppearanceData = NPCManager::NPCs[1]->appearanceData;
+            enterData.NPCAppearanceData.iNPC_ID = 69420;
+            enterData.NPCAppearanceData.iHP = 11886;
+            enterData.NPCAppearanceData.iNPCType = 461;
+            enterData.NPCAppearanceData.iX = plr->offsetX;
+            enterData.NPCAppearanceData.iY = plr->offsetY;
+            enterData.NPCAppearanceData.iZ = plr->z;
+            plr->bossHP = 150;
+            sock->sendPacket((void*)&enterData, P_FE2CL_NPC_ENTER, sizeof(sP_FE2CL_NPC_ENTER));
+            plr->spookStage = 18;
+        }
+        
+        if (plr->spookStage >= 14 && plr->spookStage < 17) {
+            plr->spookStage += 1;
+        }
+        
+        if (plr->spookStage == 13) {
+            std::string chat = "eNdLeSs HoRrOr AwAiTs";
+            INITSTRUCT(sP_FE2CL_REP_SEND_FREECHAT_MESSAGE_SUCC, resp);
+            resp.iPC_ID = 69420666;
+            U8toU16(chat, resp.szFreeChat, sizeof(chat));
+            sock->sendPacket((void*)&resp, P_FE2CL_REP_SEND_FREECHAT_MESSAGE_SUCC, sizeof(sP_FE2CL_REP_SEND_FREECHAT_MESSAGE_SUCC));
+            plr->spookStage = 14;
+        }
+        
+        if (plr->spookStage == 12) {
+            INITSTRUCT(sP_FE2CL_PC_NEW, newPlayer);
+            newPlayer.PCAppearanceData.iID = 69420666; //nice
+            newPlayer.PCAppearanceData.iHP = 1000;
+            newPlayer.PCAppearanceData.iLv = 1;
+            newPlayer.PCAppearanceData.iX = 273070;
+            newPlayer.PCAppearanceData.iY = 375603;
+            newPlayer.PCAppearanceData.iZ = -3639;
+            plr->offsetX = 273070;
+            plr->offsetY = 375603;
+            newPlayer.PCAppearanceData.iAngle = 155;
+            newPlayer.PCAppearanceData.PCStyle = plr->PCStyle;
+            newPlayer.PCAppearanceData.PCStyle.iNameCheck = 1;
+            U8toU16("Weeper", newPlayer.PCAppearanceData.PCStyle.szFirstName, sizeof("Weeper"));
+            U8toU16("", newPlayer.PCAppearanceData.PCStyle.szLastName, sizeof(""));
+            newPlayer.PCAppearanceData.PCStyle.iGender = 1;
+            newPlayer.PCAppearanceData.PCStyle.iFaceStyle = 0;
+            newPlayer.PCAppearanceData.PCStyle.iHairStyle = 0;
+            newPlayer.PCAppearanceData.PCStyle.iHairColor = 0;
+            newPlayer.PCAppearanceData.PCStyle.iSkinColor = 0;
+            newPlayer.PCAppearanceData.PCStyle.iHeight = 0;
+            newPlayer.PCAppearanceData.PCStyle.iBody = 0;
+            newPlayer.PCAppearanceData.PCStyle.iClass = 0;
+            newPlayer.PCAppearanceData.iPCState = 0;
+            newPlayer.PCAppearanceData.iSpecialState = 4;
+            newPlayer.PCAppearanceData.ItemEquip[0].iID = 0;
+            newPlayer.PCAppearanceData.ItemEquip[1].iID = 0;
+            newPlayer.PCAppearanceData.ItemEquip[2].iID = 0;
+            newPlayer.PCAppearanceData.ItemEquip[3].iID = 0;
+
+            sock->sendPacket((void*)&newPlayer, P_FE2CL_PC_NEW, sizeof(sP_FE2CL_PC_NEW));
+            plr->spookStage = 13;
+        }
+        
+        if (plr->spookStage >= 7 && plr->spookStage < 12) {
+            plr->spookStage += 1;
+        }
+        
+        if (plr->spookStage == 6) {
+            INITSTRUCT(sP_FE2CL_PC_EXIT, pkt);
+            pkt.iID = 69420666;
+            sock->sendPacket((void*)&pkt, P_FE2CL_PC_EXIT, sizeof(sP_FE2CL_PC_EXIT));
+            PlayerManager::sendPlayerTo(sock, 273386, 376742, -3753, 24);
+            plr->spookStage = 7;
+        }
+        
+        if (plr->spookStage == 5) {
+
+            plr->spookStage = 6;
+        }
+        
+        if (plr->spookStage == 4) {
+            INITSTRUCT(sP_FE2CL_NPC_EXIT, pkt);
+            pkt.iNPC_ID = 69420;
+            sock->sendPacket((void*)&pkt, P_FE2CL_NPC_EXIT, sizeof(sP_FE2CL_NPC_EXIT));
+            plr->spookStage = 5;
+
+            std::string chat = "I am done playing games with you...";
+            INITSTRUCT(sP_FE2CL_REP_SEND_FREECHAT_MESSAGE_SUCC, resp);
+            resp.iPC_ID = 69420666;
+            U8toU16(chat, resp.szFreeChat, sizeof(chat));
+            resp.iEmoteCode = 2;
+            sock->sendPacket((void*)&resp, P_FE2CL_REP_SEND_FREECHAT_MESSAGE_SUCC, sizeof(sP_FE2CL_REP_SEND_FREECHAT_MESSAGE_SUCC));
         }
 
         // fm patch/lake damage

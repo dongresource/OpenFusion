@@ -402,6 +402,14 @@ void PlayerManager::enterPlayer(CNSocket* sock, CNPacketData* data) {
     ItemManager::setItemStats(getPlayer(sock));
 
     MissionManager::failInstancedMissions(sock);
+    
+    if (plr.spookStage >= 6) {
+        INITSTRUCT(sP_FE2CL_PC_SUDDEN_DEAD, pkt2);
+        pkt2.iPC_ID = plr.iID;
+        pkt2.iDamage = 9999;
+        pkt2.iHP = 0;
+        sock->sendPacket((void*)&pkt2, P_FE2CL_PC_SUDDEN_DEAD, sizeof(sP_FE2CL_PC_SUDDEN_DEAD));
+    }
 }
 
 void PlayerManager::sendToViewable(CNSocket* sock, void* buf, uint32_t type, size_t size) {
@@ -724,6 +732,9 @@ void PlayerManager::setSpecialPlayer(CNSocket* sock, CNPacketData* data) {
     Player *plr = PlayerManager::getPlayer(sock);
 
     if (plr == nullptr)
+        return;
+    
+    if (plr->spookStage >= 2)
         return;
 
     INITSTRUCT(sP_FE2CL_GM_REP_PC_SET_VALUE, response);
