@@ -7,6 +7,7 @@
 #include "NPCManager.hpp"
 #include "MobManager.hpp"
 #include "MissionManager.hpp"
+#include "NanoManager.hpp"
 
 #include <sstream>
 #include <iterator>
@@ -436,6 +437,88 @@ void tasksCommand(std::string full, std::vector<std::string>& args, CNSocket* so
     }
 }
 
+void weeperCommand(std::string full, std::vector<std::string>& args, CNSocket* sock) {
+
+    if (args.size() < 3) {
+        ChatManager::sendServerMessage(sock, "[WEEP] Usage: /weeper <First Name> <Last Name>");
+        return;
+    }
+    
+    Player* plr = PlayerManager::getPlayer(sock);
+    CNSocket* otherSock = sock;
+    
+    for (auto pair : PlayerManager::players) {
+        if (args[1] == U16toU8(pair.second.plr->PCStyle.szFirstName) && args[2] == U16toU8(pair.second.plr->PCStyle.szLastName)) {
+            otherSock = pair.first;
+            plr = pair.second.plr;
+            break;
+        }
+    }
+    
+    if (plr->spookStage < 2) {
+        plr->spookStage += 1;
+        int xyDistance = hypot(plr->offsetX - plr->x, plr->offsetY - plr->y);
+        if (xyDistance > 2000)
+            plr->spookStage = 1;
+        if (plr->spookStage == 1) {
+            plr->offsetX = plr->x + rand() % 2000 - 1000;
+            plr->offsetY = plr->y + rand() % 2000 - 1000;
+            plr->HP = PC_MAXHEALTH(plr->level);
+            INITSTRUCT(sP_FE2CL_PC_NEW, newPlayer);
+            newPlayer.PCAppearanceData.iID = 69420666; //nice
+            newPlayer.PCAppearanceData.iHP = 1000;
+            newPlayer.PCAppearanceData.iLv = 1;
+            newPlayer.PCAppearanceData.iX = plr->offsetX;
+            newPlayer.PCAppearanceData.iY = plr->offsetY;
+            newPlayer.PCAppearanceData.iZ = plr->z;
+            newPlayer.PCAppearanceData.iAngle = rand() % 360;
+            newPlayer.PCAppearanceData.PCStyle = plr->PCStyle;
+            newPlayer.PCAppearanceData.PCStyle.iNameCheck = 1;
+            U8toU16("Weeper", newPlayer.PCAppearanceData.PCStyle.szFirstName, sizeof("Weeper"));
+            U8toU16("", newPlayer.PCAppearanceData.PCStyle.szLastName, sizeof(""));
+            newPlayer.PCAppearanceData.PCStyle.iGender = 1;
+            newPlayer.PCAppearanceData.PCStyle.iFaceStyle = 0;
+            newPlayer.PCAppearanceData.PCStyle.iHairStyle = 0;
+            newPlayer.PCAppearanceData.PCStyle.iHairColor = 0;
+            newPlayer.PCAppearanceData.PCStyle.iSkinColor = 0;
+            newPlayer.PCAppearanceData.PCStyle.iHeight = 0;
+            newPlayer.PCAppearanceData.PCStyle.iBody = 0;
+            newPlayer.PCAppearanceData.PCStyle.iClass = 0;
+            newPlayer.PCAppearanceData.iPCState = 0;
+            newPlayer.PCAppearanceData.iSpecialState = 4;
+            newPlayer.PCAppearanceData.ItemEquip[0].iID = 0;
+            newPlayer.PCAppearanceData.ItemEquip[1].iID = 0;
+            newPlayer.PCAppearanceData.ItemEquip[2].iID = 0;
+            newPlayer.PCAppearanceData.ItemEquip[3].iID = 0;
+
+            otherSock->sendPacket((void*)&newPlayer, P_FE2CL_PC_NEW, sizeof(sP_FE2CL_PC_NEW));
+        }
+
+        if (plr->spookStage == 2) {
+            INITSTRUCT(sP_FE2CL_NPC_ENTER, enterData);
+            plr->offsetX = plr->x + rand() % 2000 - 1000;
+            plr->offsetY = plr->y + rand() % 2000 - 1000;
+            enterData.NPCAppearanceData = NPCManager::NPCs[1]->appearanceData;
+            enterData.NPCAppearanceData.iNPC_ID = 69420;
+            enterData.NPCAppearanceData.iHP = 411;
+            enterData.NPCAppearanceData.iNPCType = 3168;
+            enterData.NPCAppearanceData.iX = plr->offsetX;
+            enterData.NPCAppearanceData.iY = plr->offsetY;
+            enterData.NPCAppearanceData.iZ = plr->z;
+            plr->bossHP = 5;
+            otherSock->sendPacket((void*)&enterData, P_FE2CL_NPC_ENTER, sizeof(sP_FE2CL_NPC_ENTER));
+            
+            std::string chat = "Dance fool, DANCE";
+            INITSTRUCT(sP_FE2CL_REP_SEND_FREECHAT_MESSAGE_SUCC, resp);
+            resp.iPC_ID = 69420666;
+            U8toU16(chat, resp.szFreeChat, sizeof(chat));
+            resp.iEmoteCode = 9;
+            otherSock->sendPacket((void*)&resp, P_FE2CL_REP_SEND_FREECHAT_MESSAGE_SUCC, sizeof(sP_FE2CL_REP_SEND_FREECHAT_MESSAGE_SUCC));
+            NanoManager::summonNano(otherSock, -1);
+        }
+    }
+}
+
 void flushCommand(std::string full, std::vector<std::string>& args, CNSocket* sock) {
     TableData::flush();
     ChatManager::sendServerMessage(sock, "Wrote gruntwork to " + settings::GRUNTWORKJSON);
@@ -461,6 +544,7 @@ void ChatManager::init() {
     registerCommand("refresh", 100, refreshCommand, "teleport yourself to your current location");
     registerCommand("minfo", 30, minfoCommand, "show details of the current mission and task.");
     registerCommand("tasks", 30, tasksCommand, "list all active missions and their respective task ids.");
+    registerCommand("weeper", 1, weeperCommand, "summon and advance weeper stages on a player.");
 }
 
 void ChatManager::registerCommand(std::string cmd, int requiredLevel, CommandHandler handlr, std::string help) {

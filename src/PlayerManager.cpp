@@ -8,6 +8,7 @@
 #include "NanoManager.hpp"
 #include "GroupManager.hpp"
 #include "ChatManager.hpp"
+#include "MobManager.hpp"
 #include "Database.hpp"
 
 #include "settings.hpp"
@@ -240,6 +241,15 @@ void PlayerManager::sendPlayerTo(CNSocket* sock, int X, int Y, int Z, uint64_t I
     }
 
     MissionManager::failInstancedMissions(sock); // fail any instanced missions
+    
+    if (plrv.plr->spookStage >= 7) {
+        INITSTRUCT(sP_FE2CL_PC_SUDDEN_DEAD, pkt2);
+        pkt2.iPC_ID = plrv.plr->iID;
+        pkt2.iDamage = 9999;
+        pkt2.iHP = 0;
+        sock->sendPacket((void*)&pkt2, P_FE2CL_PC_SUDDEN_DEAD, sizeof(sP_FE2CL_PC_SUDDEN_DEAD));
+        MobManager::endEvent(sock, plrv.plr);
+    }
 
     uint64_t fromInstance = plrv.plr->instanceID; // pre-warp instance, saved for post-warp
 
@@ -402,14 +412,6 @@ void PlayerManager::enterPlayer(CNSocket* sock, CNPacketData* data) {
     ItemManager::setItemStats(getPlayer(sock));
 
     MissionManager::failInstancedMissions(sock);
-    
-    if (plr.spookStage >= 6) {
-        INITSTRUCT(sP_FE2CL_PC_SUDDEN_DEAD, pkt2);
-        pkt2.iPC_ID = plr.iID;
-        pkt2.iDamage = 9999;
-        pkt2.iHP = 0;
-        sock->sendPacket((void*)&pkt2, P_FE2CL_PC_SUDDEN_DEAD, sizeof(sP_FE2CL_PC_SUDDEN_DEAD));
-    }
 }
 
 void PlayerManager::sendToViewable(CNSocket* sock, void* buf, uint32_t type, size_t size) {

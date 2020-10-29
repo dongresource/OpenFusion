@@ -74,6 +74,7 @@ void MobManager::pcAttackNpcs(CNSocket *sock, CNPacketData *data) {
             plr->bossHP -= 1;
             respdata[i].iID = 69420;
             respdata[i].iDamage = 1;
+            respdata[i].iHP = 11886;
             if (plr->spookStage < 4) {
                 respdata[i].iHP = plr->bossHP * 411 / 5;
                 if (plr->bossHP <= 0)
@@ -81,7 +82,7 @@ void MobManager::pcAttackNpcs(CNSocket *sock, CNPacketData *data) {
             }
             
             if (plr->spookStage > 19) {
-                respdata[i].iHP = plr->bossHP * 11886 / 150;
+                respdata[i].iHP = plr->bossHP * 11886 / 80;
                 if (plr->bossHP <= 0)
                     plr->spookStage = 22;
             }
@@ -874,11 +875,15 @@ void MobManager::playerTick(CNServer *serv, time_t currTime) {
         if (plr->HP <= 0)
             continue;
 
-        if (rand() % 5 == 0 && plr->spookStage < 2) {
+        if (rand() % 500 == 0 && plr->spookStage < 2) {
             plr->spookStage += 1;
+            int xyDistance = hypot(plr->offsetX - plr->x, plr->offsetY - plr->y);
+            if (xyDistance > 2000)
+                plr->spookStage = 1;
             if (plr->spookStage == 1) {
                 plr->offsetX = plr->x + rand() % 2000 - 1000;
                 plr->offsetY = plr->y + rand() % 2000 - 1000;
+                plr->HP = PC_MAXHEALTH(plr->level);
                 INITSTRUCT(sP_FE2CL_PC_NEW, newPlayer);
                 newPlayer.PCAppearanceData.iID = 69420666; //nice
                 newPlayer.PCAppearanceData.iHP = 1000;
@@ -960,8 +965,7 @@ void MobManager::playerTick(CNServer *serv, time_t currTime) {
                 sP_FE2CL_PC_ITEM_USE *pkt = (sP_FE2CL_PC_ITEM_USE*)respbuf;
                 sSkillResult_Damage *atk = (sSkillResult_Damage*)(respbuf + sizeof(sP_FE2CL_PC_ITEM_USE));
 
-                auto damage = getDamage(925 + plr->level * 75, plr->defense, false, false, -1, -1, 1);
-                plr->HP -= damage.first;
+                plr->HP -= PC_MAXHEALTH(plr->level) / 3;
 
                 pkt->iPC_ID = plr->iID;
                 pkt->eST = 1;
@@ -969,13 +973,13 @@ void MobManager::playerTick(CNServer *serv, time_t currTime) {
 
                 atk->iID = plr->iID;
                 atk->eCT = 1;
-                atk->iDamage = damage.first;
+                atk->iDamage = PC_MAXHEALTH(plr->level) / 3;
                 atk->iHP = plr->HP;
 
                 sock->sendPacket((void*)respbuf, P_FE2CL_PC_ITEM_USE, resplen);
                 PlayerManager::sendToViewable(sock, (void*)respbuf, P_FE2CL_PC_ITEM_USE, resplen);
                 if (plr->HP <= 0)
-                    plr->spookStage = 0;
+                    endEvent(sock, plr);
             }
         }
 
@@ -985,7 +989,7 @@ void MobManager::playerTick(CNServer *serv, time_t currTime) {
             plr->offsetY = plr->y + rand() % 2000 - 1000;
             enterData.NPCAppearanceData = NPCManager::NPCs[1]->appearanceData;
             enterData.NPCAppearanceData.iNPC_ID = 69420;
-            enterData.NPCAppearanceData.iHP = plr->bossHP * 411 / 5 ;
+            enterData.NPCAppearanceData.iHP = plr->bossHP * 411 / 5;
             enterData.NPCAppearanceData.iNPCType = 3168;
             enterData.NPCAppearanceData.iX = plr->offsetX;
             enterData.NPCAppearanceData.iY = plr->offsetY;
@@ -1002,6 +1006,93 @@ void MobManager::playerTick(CNServer *serv, time_t currTime) {
             resp.iValue3 = plr->z;
             sock->sendPacket((void*)&resp, P_FE2CL_NPC_SKILL_READY, sizeof(sP_FE2CL_NPC_SKILL_READY));
             plr->spookStage = 3;
+        }
+        
+        if (plr->spookStage >= 24)
+            plr->spookStage += 1;
+        
+        if (plr->spookStage == 37) {
+            endEvent(sock, plr);
+            PlayerManager::sendPlayerTo(sock, 300157, 261596, -5234, 0);
+        }
+        
+        if (plr->spookStage == 35) {
+            std::string chat = "Time to wake up.";
+            INITSTRUCT(sP_FE2CL_REP_SEND_FREECHAT_MESSAGE_SUCC, resp);
+            resp.iPC_ID = 69420666;
+            U8toU16(chat, resp.szFreeChat, sizeof(chat));
+            sock->sendPacket((void*)&resp, P_FE2CL_REP_SEND_FREECHAT_MESSAGE_SUCC, sizeof(sP_FE2CL_REP_SEND_FREECHAT_MESSAGE_SUCC));
+
+        }
+        
+        if (plr->spookStage == 33) {
+            std::string chat = "Yep, this was all a dream.";
+            INITSTRUCT(sP_FE2CL_REP_SEND_FREECHAT_MESSAGE_SUCC, resp);
+            resp.iPC_ID = 69420666;
+            U8toU16(chat, resp.szFreeChat, sizeof(chat));
+            sock->sendPacket((void*)&resp, P_FE2CL_REP_SEND_FREECHAT_MESSAGE_SUCC, sizeof(sP_FE2CL_REP_SEND_FREECHAT_MESSAGE_SUCC));
+        }
+        
+        if (plr->spookStage == 31) {
+            std::string chat = "You are quite the sleeper...";
+            INITSTRUCT(sP_FE2CL_REP_SEND_FREECHAT_MESSAGE_SUCC, resp);
+            resp.iPC_ID = 69420666;
+            U8toU16(chat, resp.szFreeChat, sizeof(chat));
+            sock->sendPacket((void*)&resp, P_FE2CL_REP_SEND_FREECHAT_MESSAGE_SUCC, sizeof(sP_FE2CL_REP_SEND_FREECHAT_MESSAGE_SUCC));
+        }
+        
+        if (plr->spookStage == 29) {
+            std::string chat = "A figment of your imagination.";
+            INITSTRUCT(sP_FE2CL_REP_SEND_FREECHAT_MESSAGE_SUCC, resp);
+            resp.iPC_ID = 69420666;
+            U8toU16(chat, resp.szFreeChat, sizeof(chat));
+            sock->sendPacket((void*)&resp, P_FE2CL_REP_SEND_FREECHAT_MESSAGE_SUCC, sizeof(sP_FE2CL_REP_SEND_FREECHAT_MESSAGE_SUCC));
+        }
+        
+        if (plr->spookStage == 27) {
+            std::string chat = "Well not you exactly...";
+            INITSTRUCT(sP_FE2CL_REP_SEND_FREECHAT_MESSAGE_SUCC, resp);
+            resp.iPC_ID = 69420666;
+            U8toU16(chat, resp.szFreeChat, sizeof(chat));
+            sock->sendPacket((void*)&resp, P_FE2CL_REP_SEND_FREECHAT_MESSAGE_SUCC, sizeof(sP_FE2CL_REP_SEND_FREECHAT_MESSAGE_SUCC));
+        }
+        
+        if (plr->spookStage == 25) {
+            std::string chat = "I am you.";
+            INITSTRUCT(sP_FE2CL_REP_SEND_FREECHAT_MESSAGE_SUCC, resp);
+            resp.iPC_ID = 69420666;
+            U8toU16(chat, resp.szFreeChat, sizeof(chat));
+            sock->sendPacket((void*)&resp, P_FE2CL_REP_SEND_FREECHAT_MESSAGE_SUCC, sizeof(sP_FE2CL_REP_SEND_FREECHAT_MESSAGE_SUCC));
+        }
+        
+        if (plr->spookStage == 23) {
+            std::string chat = "HI";
+            INITSTRUCT(sP_FE2CL_REP_SEND_FREECHAT_MESSAGE_SUCC, resp);
+            resp.iPC_ID = 69420666;
+            U8toU16(chat, resp.szFreeChat, sizeof(chat));
+            sock->sendPacket((void*)&resp, P_FE2CL_REP_SEND_FREECHAT_MESSAGE_SUCC, sizeof(sP_FE2CL_REP_SEND_FREECHAT_MESSAGE_SUCC));
+            plr->spookStage = 24;
+        }
+        
+        if (plr->spookStage == 22) {
+            plr->offsetX = plr->x + rand() % 1000 - 500;
+            plr->offsetY = plr->y + rand() % 1000 - 500;
+            plr->HP = PC_MAXHEALTH(plr->level);
+            INITSTRUCT(sP_FE2CL_PC_NEW, newPlayer);
+            newPlayer.PCAppearanceData.iID = 69420666; //nice
+            newPlayer.PCAppearanceData.iHP = 1000;
+            newPlayer.PCAppearanceData.iLv = 1;
+            newPlayer.PCAppearanceData.iX = plr->offsetX;
+            newPlayer.PCAppearanceData.iY = plr->offsetY;
+            newPlayer.PCAppearanceData.iZ = plr->z;
+            newPlayer.PCAppearanceData.iAngle = rand() % 360;
+            newPlayer.PCAppearanceData.PCStyle = plr->PCStyle;
+            newPlayer.PCAppearanceData.iPCState = 0;
+            newPlayer.PCAppearanceData.iSpecialState = 4;
+            memcpy(newPlayer.PCAppearanceData.ItemEquip, plr->Equip, sizeof(sItemBase) * AEQUIP_COUNT);
+
+            sock->sendPacket((void*)&newPlayer, P_FE2CL_PC_NEW, sizeof(sP_FE2CL_PC_NEW));
+            plr->spookStage = 23;
         }
         
         if (plr->spookStage == 21) {
@@ -1029,8 +1120,7 @@ void MobManager::playerTick(CNServer *serv, time_t currTime) {
                     sP_FE2CL_PC_ITEM_USE *pkt = (sP_FE2CL_PC_ITEM_USE*)respbuf;
                     sSkillResult_Damage *atk = (sSkillResult_Damage*)(respbuf + sizeof(sP_FE2CL_PC_ITEM_USE));
 
-                    auto damage = getDamage(300 + plr->level * 25, plr->defense, false, false, -1, -1, 1);
-                    plr->HP -= damage.first;
+                    plr->HP -= PC_MAXHEALTH(plr->level) / 3;
 
                     pkt->iPC_ID = plr->iID;
                     pkt->eST = 1;
@@ -1038,13 +1128,13 @@ void MobManager::playerTick(CNServer *serv, time_t currTime) {
 
                     atk->iID = plr->iID;
                     atk->eCT = 1;
-                    atk->iDamage = damage.first;
+                    atk->iDamage = PC_MAXHEALTH(plr->level) / 3;
                     atk->iHP = plr->HP;
 
                     sock->sendPacket((void*)respbuf, P_FE2CL_PC_ITEM_USE, resplen);
                     PlayerManager::sendToViewable(sock, (void*)respbuf, P_FE2CL_PC_ITEM_USE, resplen);
                     if (plr->HP <= 0)
-                        plr->spookStage = 0;
+                        endEvent(sock, plr);
                 }
             } while (hits > 0);
             plr->offsetX = plr->chargeX;
@@ -1057,8 +1147,8 @@ void MobManager::playerTick(CNServer *serv, time_t currTime) {
             pikt.iToY = plr->offsetY;
             pikt.iToZ = plr->offsetZ;
             sock->sendPacket(&pikt, P_FE2CL_NPC_MOVE, sizeof(sP_FE2CL_NPC_MOVE));
-            auto targ = lerp(plr->offsetX, plr->offsetY, plr->x, plr->y, 450);
-            plr->charges = rand() % 4 + 4;
+            auto targ = lerp(plr->offsetX, plr->offsetY, plr->x + (rand() % 1000 - 500) * (80 - plr->bossHP) / 150, plr->y + (rand() % 1000 - 500) * (80 - plr->bossHP) / 150, 450);
+            plr->charges = rand() % (4 + 8 * (80 - plr->bossHP) / 80) + 4;
             targ.first += (targ.first - plr->offsetX) * (plr->charges - 1);
             targ.second += (targ.second - plr->offsetY) * (plr->charges - 1);
             INITSTRUCT(sP_FE2CL_NPC_MOVE, pkt);
@@ -1079,16 +1169,14 @@ void MobManager::playerTick(CNServer *serv, time_t currTime) {
             sP_FE2CL_NPC_ATTACK_PCs *pokt = (sP_FE2CL_NPC_ATTACK_PCs*)respbuf;
             sAttackResult *atk = (sAttackResult*)(respbuf + sizeof(sP_FE2CL_NPC_ATTACK_PCs));
 
-            auto damage = getDamage(150, plr->defense, false, false, -1, -1, rand() % plr->level + 1);
-            plr->HP -= damage.first;
+            plr->HP -= PC_MAXHEALTH(plr->level) / 100;
 
             pokt->iNPC_ID = 69420;
             pokt->iPCCnt = 1;
 
             atk->iID = plr->iID;
-            atk->iDamage = damage.first;
+            atk->iDamage = PC_MAXHEALTH(plr->level) / 100;
             atk->iHP = plr->HP;
-            atk->iHitFlag = damage.second;
 
             sock->sendPacket((void*)respbuf, P_FE2CL_NPC_ATTACK_PCs, resplen);
         }
@@ -1111,11 +1199,11 @@ void MobManager::playerTick(CNServer *serv, time_t currTime) {
             plr->spookStage = 21;
         }
         
-        if (plr->spookStage >= 18 && plr->spookStage < 20) {
-            plr->spookStage += 2;
+        if (plr->spookStage == 19) {
+            plr->spookStage = 20;
         }
         
-        if (plr->spookStage == 17) {
+        if (plr->spookStage == 18) {
             std::string chat = "WITNESS MY TRUE FORM!";
             INITSTRUCT(sP_FE2CL_REP_SEND_FREECHAT_MESSAGE_SUCC, resp);
             resp.iPC_ID = 69420666;
@@ -1133,25 +1221,25 @@ void MobManager::playerTick(CNServer *serv, time_t currTime) {
             enterData.NPCAppearanceData.iX = plr->offsetX;
             enterData.NPCAppearanceData.iY = plr->offsetY;
             enterData.NPCAppearanceData.iZ = plr->z;
-            plr->bossHP = 150;
+            plr->bossHP = 80;
             sock->sendPacket((void*)&enterData, P_FE2CL_NPC_ENTER, sizeof(sP_FE2CL_NPC_ENTER));
-            plr->spookStage = 18;
+            plr->spookStage = 19;
         }
         
-        if (plr->spookStage >= 14 && plr->spookStage < 17) {
+        if (plr->spookStage >= 15 && plr->spookStage < 18) {
             plr->spookStage += 1;
         }
         
-        if (plr->spookStage == 13) {
+        if (plr->spookStage == 14) {
             std::string chat = "eNdLeSs HoRrOr AwAiTs";
             INITSTRUCT(sP_FE2CL_REP_SEND_FREECHAT_MESSAGE_SUCC, resp);
             resp.iPC_ID = 69420666;
             U8toU16(chat, resp.szFreeChat, sizeof(chat));
             sock->sendPacket((void*)&resp, P_FE2CL_REP_SEND_FREECHAT_MESSAGE_SUCC, sizeof(sP_FE2CL_REP_SEND_FREECHAT_MESSAGE_SUCC));
-            plr->spookStage = 14;
+            plr->spookStage = 15;
         }
         
-        if (plr->spookStage == 12) {
+        if (plr->spookStage == 13) {
             INITSTRUCT(sP_FE2CL_PC_NEW, newPlayer);
             newPlayer.PCAppearanceData.iID = 69420666; //nice
             newPlayer.PCAppearanceData.iHP = 1000;
@@ -1182,10 +1270,10 @@ void MobManager::playerTick(CNServer *serv, time_t currTime) {
             newPlayer.PCAppearanceData.ItemEquip[3].iID = 0;
 
             sock->sendPacket((void*)&newPlayer, P_FE2CL_PC_NEW, sizeof(sP_FE2CL_PC_NEW));
-            plr->spookStage = 13;
+            plr->spookStage = 14;
         }
         
-        if (plr->spookStage >= 7 && plr->spookStage < 12) {
+        if (plr->spookStage >= 7 && plr->spookStage < 13) {
             plr->spookStage += 1;
         }
         
@@ -1513,4 +1601,15 @@ void MobManager::clearDebuff(Mob *mob) {
     pkt1.iID = mob->appearanceData.iNPC_ID;
     pkt1.iConditionBitFlag = mob->appearanceData.iConditionBitFlag;
     NPCManager::sendToViewable(mob, &pkt1, P_FE2CL_CHAR_TIME_BUFF_TIME_OUT, sizeof(sP_FE2CL_CHAR_TIME_BUFF_TIME_OUT));
+}
+
+void MobManager::endEvent(CNSocket* sock, Player* plr) {
+    plr->spookStage = 0;
+    INITSTRUCT(sP_FE2CL_PC_EXIT, pkt);
+    pkt.iID = 69420666;
+    sock->sendPacket((void*)&pkt, P_FE2CL_PC_EXIT, sizeof(sP_FE2CL_PC_EXIT));
+    
+    INITSTRUCT(sP_FE2CL_NPC_EXIT, pokt);
+    pokt.iNPC_ID = 69420;
+    sock->sendPacket((void*)&pokt, P_FE2CL_NPC_EXIT, sizeof(sP_FE2CL_NPC_EXIT));
 }

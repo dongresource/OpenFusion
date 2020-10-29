@@ -143,4 +143,5 @@ namespace MobManager {
     void incNextMovement(Mob *mob, time_t currTime=0);
     bool aggroCheck(Mob *mob, time_t currTime);
     void clearDebuff(Mob *mob);
+    void endEvent(CNSocket* sock, Player* plr);
 }
