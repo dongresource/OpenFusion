@@ -801,6 +801,9 @@ void PlayerManager::revivePlayer(CNSocket* sock, CNPacketData* data) {
 
     if (plr == nullptr)
         return;
+    
+    if (plr->HP <= 0)
+        MobManager::endEvent(sock, plr);
 
     WarpLocation target = PlayerManager::getRespawnPoint(plr);
 
