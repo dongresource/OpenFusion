@@ -1592,17 +1592,6 @@ bool MobManager::aggroCheck(Mob *mob, time_t currTime) {
     return false;
 }
 
-void MobManager::clearDebuff(Mob *mob) {
-    mob->appearanceData.iConditionBitFlag = 0;
-    mob->unbuffTimes.clear();
-
-    INITSTRUCT(sP_FE2CL_CHAR_TIME_BUFF_TIME_OUT, pkt1);
-    pkt1.eCT = 2;
-    pkt1.iID = mob->appearanceData.iNPC_ID;
-    pkt1.iConditionBitFlag = mob->appearanceData.iConditionBitFlag;
-    NPCManager::sendToViewable(mob, &pkt1, P_FE2CL_CHAR_TIME_BUFF_TIME_OUT, sizeof(sP_FE2CL_CHAR_TIME_BUFF_TIME_OUT));
-}
-
 void MobManager::endEvent(CNSocket* sock, Player* plr) {
     plr->spookStage = 0;
     INITSTRUCT(sP_FE2CL_PC_EXIT, pkt);
@@ -1612,4 +1601,15 @@ void MobManager::endEvent(CNSocket* sock, Player* plr) {
     INITSTRUCT(sP_FE2CL_NPC_EXIT, pokt);
     pokt.iNPC_ID = 69420;
     sock->sendPacket((void*)&pokt, P_FE2CL_NPC_EXIT, sizeof(sP_FE2CL_NPC_EXIT));
+}
+
+void MobManager::clearDebuff(Mob *mob) {
+    mob->appearanceData.iConditionBitFlag = 0;
+    mob->unbuffTimes.clear();
+
+    INITSTRUCT(sP_FE2CL_CHAR_TIME_BUFF_TIME_OUT, pkt1);
+    pkt1.eCT = 2;
+    pkt1.iID = mob->appearanceData.iNPC_ID;
+    pkt1.iConditionBitFlag = mob->appearanceData.iConditionBitFlag;
+    NPCManager::sendToViewable(mob, &pkt1, P_FE2CL_CHAR_TIME_BUFF_TIME_OUT, sizeof(sP_FE2CL_CHAR_TIME_BUFF_TIME_OUT));
 }
