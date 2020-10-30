@@ -1146,6 +1146,7 @@ void MobManager::playerTick(CNServer *serv, time_t currTime) {
             pikt.iToX = plr->offsetX;
             pikt.iToY = plr->offsetY;
             pikt.iToZ = plr->offsetZ;
+            pikt.iMoveStyle = 1;
             sock->sendPacket(&pikt, P_FE2CL_NPC_MOVE, sizeof(sP_FE2CL_NPC_MOVE));
             auto targ = lerp(plr->offsetX, plr->offsetY, plr->x + (rand() % 1000 - 500) * (80 - plr->bossHP) / 150, plr->y + (rand() % 1000 - 500) * (80 - plr->bossHP) / 150, 450);
             plr->charges = rand() % (4 + 8 * (80 - plr->bossHP) / 80) + 4;
@@ -1157,6 +1158,7 @@ void MobManager::playerTick(CNServer *serv, time_t currTime) {
             pkt.iToX = targ.first;
             pkt.iToY = targ.second;
             pkt.iToZ = plr->z;
+            pkt.iMoveStyle = 1;
             sock->sendPacket(&pkt, P_FE2CL_NPC_MOVE, sizeof(sP_FE2CL_NPC_MOVE));
             plr->chargeX = targ.first;
             plr->chargeY = targ.second;
@@ -1192,6 +1194,7 @@ void MobManager::playerTick(CNServer *serv, time_t currTime) {
             pkt.iToX = targ.first;
             pkt.iToY = targ.second;
             pkt.iToZ = plr->z;
+            pkt.iMoveStyle = 1;
             sock->sendPacket(&pkt, P_FE2CL_NPC_MOVE, sizeof(sP_FE2CL_NPC_MOVE));
             plr->chargeX = targ.first;
             plr->chargeY = targ.second;
