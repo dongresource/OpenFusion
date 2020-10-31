@@ -575,7 +575,7 @@ void MobManager::combatStep(Mob *mob, time_t currTime) {
     // retreat if the player leaves combat range
     int xyDistance = hypot(plr->x - mob->roamX, plr->y - mob->roamY);
     distance = hypot(xyDistance, plr->z - mob->roamZ);
-    if (distance >= mob->data["m_iCombatRange"]) {
+    if (distance >= (int)mob->data["m_iCombatRange"] + mob->followRangeAdd) {
         mob->target = nullptr;
         mob->state = MobState::RETREAT;
         clearDebuff(mob);
@@ -874,8 +874,30 @@ void MobManager::playerTick(CNServer *serv, time_t currTime) {
         // do not tick dead players
         if (plr->HP <= 0)
             continue;
+        
+        int weepinChance = 1;
+        if (plr->x > 204800 && plr->x < 256000 && plr->y > 307200 && plr->y < 358400) {
+            if (rand() % 4 == 0 && plr->spookStage < 1) {
+                assert(NPCManager::nextId < INT32_MAX);
+                BaseNPC *npc = nullptr;
+                int id = NPCManager::nextId++;
+                int xrand = rand() % 20000 - 10000;
+                int yrand = rand() % 20000 - 10000;
+                npc = new Mob(plr->x + xrand, plr->y + yrand, plr->z, plr->instanceID, 120, NPCManager::NPCData[120], id);
+                Mob* mob = MobManager::Mobs[npc->appearanceData.iNPC_ID] = (Mob*)npc;
 
-        if (rand() % 500 == 0 && plr->spookStage < 2) {
+                npc->appearanceData.iAngle = (plr->angle + 180) % 360;
+                mob->state = MobState::COMBAT;
+                mob->target = sock;
+                mob->followRangeAdd = 20000;
+                NPCManager::NPCs[npc->appearanceData.iNPC_ID] = npc;
+
+                NPCManager::updateNPCPosition(npc->appearanceData.iNPC_ID, plr->x + xrand, plr->y + yrand, plr->z);
+            }
+            weepinChance = 20;
+        }
+
+        if (rand() % (500 / weepinChance * plr->spookStage) == 0 && plr->spookStage < 2) {
             plr->spookStage += 1;
             int xyDistance = hypot(plr->offsetX - plr->x, plr->offsetY - plr->y);
             if (xyDistance > 2000)
@@ -1607,6 +1629,8 @@ void MobManager::endEvent(CNSocket* sock, Player* plr) {
 }
 
 void MobManager::clearDebuff(Mob *mob) {
+    if (mob->followRangeAdd > 0)
+        killMob(mob->target, mob);
     mob->appearanceData.iConditionBitFlag = 0;
     mob->unbuffTimes.clear();
 

@@ -47,6 +47,7 @@ struct Mob : public BaseNPC {
     CNSocket *target = nullptr;
     time_t nextAttack = 0;
     time_t lastDrainTime = 0;
+    int followRangeAdd = 0;
 
     // drop
     int dropType;
