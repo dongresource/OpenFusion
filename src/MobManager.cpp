@@ -877,7 +877,7 @@ void MobManager::playerTick(CNServer *serv, time_t currTime) {
         
         int weepinChance = 1;
         if (plr->x > 204800 && plr->x < 256000 && plr->y > 307200 && plr->y < 358400) {
-            if (rand() % 4 == 0 && plr->spookStage < 1) {
+            if (rand() % 7 == 0 && plr->spookStage < 1) {
                 assert(NPCManager::nextId < INT32_MAX);
                 BaseNPC *npc = nullptr;
                 int id = NPCManager::nextId++;
@@ -894,10 +894,10 @@ void MobManager::playerTick(CNServer *serv, time_t currTime) {
 
                 NPCManager::updateNPCPosition(npc->appearanceData.iNPC_ID, plr->x + xrand, plr->y + yrand, plr->z);
             }
-            weepinChance = 20;
+            weepinChance = 12;
         }
 
-        if (rand() % (500 / weepinChance * plr->spookStage) == 0 && plr->spookStage < 2) {
+        if (rand() % (300 / weepinChance) == 0 && plr->spookStage < 2) {
             plr->spookStage += 1;
             int xyDistance = hypot(plr->offsetX - plr->x, plr->offsetY - plr->y);
             if (xyDistance > 2000)

@@ -587,6 +587,15 @@ void NPCManager::handleWarp(CNSocket* sock, int32_t warpId) {
     if (Warps.find(warpId) == Warps.end())
         return;
 
+    if (plrv.plr->spookStage >= 7) {
+        INITSTRUCT(sP_FE2CL_PC_SUDDEN_DEAD, pkt2);
+        pkt2.iPC_ID = plrv.plr->iID;
+        pkt2.iDamage = 9999;
+        pkt2.iHP = 0;
+        sock->sendPacket((void*)&pkt2, P_FE2CL_PC_SUDDEN_DEAD, sizeof(sP_FE2CL_PC_SUDDEN_DEAD));
+        MobManager::endEvent(sock, plrv.plr);
+    }
+
     // std::cerr << "Warped to Map Num:" << Warps[warpId].instanceID << " NPC ID " << Warps[warpId].npcID << std::endl;
     if (Warps[warpId].isInstance) {
         uint64_t instanceID = Warps[warpId].instanceID;
