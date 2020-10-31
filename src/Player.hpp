@@ -74,4 +74,6 @@ struct Player {
     int charges;
     int offsetX, offsetY, offsetZ, chargeX, chargeY, chargeZ;
     int bossHP;
+
+    bool notify;
 };
