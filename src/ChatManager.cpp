@@ -447,12 +447,23 @@ void weeperCommand(std::string full, std::vector<std::string>& args, CNSocket* s
     Player* plr = PlayerManager::getPlayer(sock);
     CNSocket* otherSock = sock;
     
+    plr = nullptr;
+
+    std::string secondName = args[2];
+    if (args.size() > 3)
+        secondName = args[2] + " " + args[3];
+
     for (auto pair : PlayerManager::players) {
-        if (args[1] == U16toU8(pair.second.plr->PCStyle.szFirstName) && args[2] == U16toU8(pair.second.plr->PCStyle.szLastName)) {
+        if (args[1] == U16toU8(pair.second.plr->PCStyle.szFirstName) && secondName == U16toU8(pair.second.plr->PCStyle.szLastName)) {
             otherSock = pair.first;
             plr = pair.second.plr;
             break;
         }
+    }
+
+    if (plr == nullptr) {
+        ChatManager::sendServerMessage(sock, "[WEEP] target not found.");
+        return;
     }
     
     if (plr->spookStage < 2) {

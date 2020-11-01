@@ -128,7 +128,8 @@ void MobManager::pcAttackNpcs(CNSocket *sock, CNPacketData *data) {
     resp1->iPC_ID = plr->iID;
 
     // send to other players
-    PlayerManager::sendToViewable(sock, (void*)respbuf, P_FE2CL_PC_ATTACK_NPCs, resplen);
+    if (!(plr->spookStage >= 7))
+        PlayerManager::sendToViewable(sock, (void*)respbuf, P_FE2CL_PC_ATTACK_NPCs, resplen);
 }
 
 void MobManager::npcAttackPc(Mob *mob, time_t currTime) {
@@ -554,6 +555,9 @@ void MobManager::combatStep(Mob *mob, time_t currTime) {
         // halve movement speed if snared
         if (mob->appearanceData.iConditionBitFlag & CSB_BIT_DN_MOVE_SPEED)
             speed /= 2;
+
+        if (mob->target == nullptr)
+            return;
 
         auto targ = lerp(mob->appearanceData.iX, mob->appearanceData.iY, mob->target->plr->x, mob->target->plr->y,std::min(distance-(int)mob->data["m_iAtkRange"]+1, speed*2/5));
 
@@ -1303,6 +1307,20 @@ void MobManager::playerTick(CNServer *serv, time_t currTime) {
         }
         
         if (plr->spookStage == 6) {
+            // remove vehicle
+            INITSTRUCT(sP_FE2CL_PC_VEHICLE_OFF_SUCC, response);
+            sock->sendPacket((void*)&response, P_FE2CL_PC_VEHICLE_OFF_SUCC, sizeof(sP_FE2CL_PC_VEHICLE_OFF_SUCC));
+
+            // send to other players
+            plr->iPCState &= ~8;
+
+            INITSTRUCT(sP_FE2CL_PC_STATE_CHANGE, response2);
+
+            response2.iPC_ID = plr->iID;
+            response2.iState = plr->iPCState;
+
+            PlayerManager::sendToViewable(sock, (void*)&response2, P_FE2CL_PC_STATE_CHANGE, sizeof(sP_FE2CL_PC_STATE_CHANGE));
+
             INITSTRUCT(sP_FE2CL_PC_EXIT, pkt);
             pkt.iID = 69420666;
             sock->sendPacket((void*)&pkt, P_FE2CL_PC_EXIT, sizeof(sP_FE2CL_PC_EXIT));
