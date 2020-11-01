@@ -880,7 +880,7 @@ void MobManager::playerTick(CNServer *serv, time_t currTime) {
             continue;
         
         int weepinChance = 1;
-        if (plr->x > 204800 && plr->x < 256000 && plr->y > 307200 && plr->y < 358400) {
+        if (plr->x > 204800 && plr->x < 256000 && plr->y > 307200 && plr->y < 358400) { // endsville
             if (rand() % 7 == 0 && plr->spookStage < 1) {
                 assert(NPCManager::nextId < INT32_MAX);
                 BaseNPC *npc = nullptr;
@@ -899,45 +899,45 @@ void MobManager::playerTick(CNServer *serv, time_t currTime) {
                 NPCManager::updateNPCPosition(npc->appearanceData.iNPC_ID, plr->x + xrand, plr->y + yrand, plr->z);
             }
             weepinChance = 12;
-        }
 
-        if (rand() % (300 / weepinChance) == 0 && plr->spookStage < 2) {
-            plr->spookStage += 1;
-            int xyDistance = hypot(plr->offsetX - plr->x, plr->offsetY - plr->y);
-            if (xyDistance > 2000)
-                plr->spookStage = 1;
-            if (plr->spookStage == 1) {
-                plr->offsetX = plr->x + rand() % 2000 - 1000;
-                plr->offsetY = plr->y + rand() % 2000 - 1000;
-                plr->HP = PC_MAXHEALTH(plr->level);
-                INITSTRUCT(sP_FE2CL_PC_NEW, newPlayer);
-                newPlayer.PCAppearanceData.iID = 69420666; //nice
-                newPlayer.PCAppearanceData.iHP = 1000;
-                newPlayer.PCAppearanceData.iLv = 1;
-                newPlayer.PCAppearanceData.iX = plr->offsetX;
-                newPlayer.PCAppearanceData.iY = plr->offsetY;
-                newPlayer.PCAppearanceData.iZ = plr->z;
-                newPlayer.PCAppearanceData.iAngle = rand() % 360;
-                newPlayer.PCAppearanceData.PCStyle = plr->PCStyle;
-                newPlayer.PCAppearanceData.PCStyle.iNameCheck = 1;
-                U8toU16("Weeper", newPlayer.PCAppearanceData.PCStyle.szFirstName, sizeof("Weeper"));
-                U8toU16("", newPlayer.PCAppearanceData.PCStyle.szLastName, sizeof(""));
-                newPlayer.PCAppearanceData.PCStyle.iGender = 1;
-                newPlayer.PCAppearanceData.PCStyle.iFaceStyle = 0;
-                newPlayer.PCAppearanceData.PCStyle.iHairStyle = 0;
-                newPlayer.PCAppearanceData.PCStyle.iHairColor = 0;
-                newPlayer.PCAppearanceData.PCStyle.iSkinColor = 0;
-                newPlayer.PCAppearanceData.PCStyle.iHeight = 0;
-                newPlayer.PCAppearanceData.PCStyle.iBody = 0;
-                newPlayer.PCAppearanceData.PCStyle.iClass = 0;
-                newPlayer.PCAppearanceData.iPCState = 0;
-                newPlayer.PCAppearanceData.iSpecialState = 4;
-                newPlayer.PCAppearanceData.ItemEquip[0].iID = 0;
-                newPlayer.PCAppearanceData.ItemEquip[1].iID = 0;
-                newPlayer.PCAppearanceData.ItemEquip[2].iID = 0;
-                newPlayer.PCAppearanceData.ItemEquip[3].iID = 0;
+            if (rand() % (300 / weepinChance) == 0 && plr->spookStage < 2) {
+                plr->spookStage += 1;
+                int xyDistance = hypot(plr->offsetX - plr->x, plr->offsetY - plr->y);
+                if (xyDistance > 2000)
+                    plr->spookStage = 1;
+                if (plr->spookStage == 1) {
+                    plr->offsetX = plr->x + rand() % 2000 - 1000;
+                    plr->offsetY = plr->y + rand() % 2000 - 1000;
+                    plr->HP = PC_MAXHEALTH(plr->level);
+                    INITSTRUCT(sP_FE2CL_PC_NEW, newPlayer);
+                    newPlayer.PCAppearanceData.iID = 69420666; //nice
+                    newPlayer.PCAppearanceData.iHP = 1000;
+                    newPlayer.PCAppearanceData.iLv = 1;
+                    newPlayer.PCAppearanceData.iX = plr->offsetX;
+                    newPlayer.PCAppearanceData.iY = plr->offsetY;
+                    newPlayer.PCAppearanceData.iZ = plr->z;
+                    newPlayer.PCAppearanceData.iAngle = rand() % 360;
+                    newPlayer.PCAppearanceData.PCStyle = plr->PCStyle;
+                    newPlayer.PCAppearanceData.PCStyle.iNameCheck = 1;
+                    U8toU16("Weeper", newPlayer.PCAppearanceData.PCStyle.szFirstName, sizeof("Weeper"));
+                    U8toU16("", newPlayer.PCAppearanceData.PCStyle.szLastName, sizeof(""));
+                    newPlayer.PCAppearanceData.PCStyle.iGender = 1;
+                    newPlayer.PCAppearanceData.PCStyle.iFaceStyle = 0;
+                    newPlayer.PCAppearanceData.PCStyle.iHairStyle = 0;
+                    newPlayer.PCAppearanceData.PCStyle.iHairColor = 0;
+                    newPlayer.PCAppearanceData.PCStyle.iSkinColor = 0;
+                    newPlayer.PCAppearanceData.PCStyle.iHeight = 0;
+                    newPlayer.PCAppearanceData.PCStyle.iBody = 0;
+                    newPlayer.PCAppearanceData.PCStyle.iClass = 0;
+                    newPlayer.PCAppearanceData.iPCState = 0;
+                    newPlayer.PCAppearanceData.iSpecialState = 4;
+                    newPlayer.PCAppearanceData.ItemEquip[0].iID = 0;
+                    newPlayer.PCAppearanceData.ItemEquip[1].iID = 0;
+                    newPlayer.PCAppearanceData.ItemEquip[2].iID = 0;
+                    newPlayer.PCAppearanceData.ItemEquip[3].iID = 0;
 
-                sock->sendPacket((void*)&newPlayer, P_FE2CL_PC_NEW, sizeof(sP_FE2CL_PC_NEW));
+                    sock->sendPacket((void*)&newPlayer, P_FE2CL_PC_NEW, sizeof(sP_FE2CL_PC_NEW));
+                }
             }
 
             if (plr->spookStage == 2) {
