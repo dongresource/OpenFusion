@@ -289,12 +289,42 @@ void PlayerManager::enterPlayer(CNSocket* sock, CNPacketData* data) {
 
     MissionManager::failInstancedMissions(sock);
 
+#ifdef ACADEMY
+    sendNanoBookSubset(sock);
+#endif
+
     // initial buddy sync
     BuddyManager::refreshBuddyList(sock);
 
     for (auto& pair : PlayerManager::players)
         if (pair.second->notify)
             ChatManager::sendServerMessage(pair.first, "[ADMIN]" + getPlayerName(&plr) + " has joined.");
+}
+
+void PlayerManager::sendNanoBookSubset(CNSocket *sock) {
+#ifdef ACADEMY
+    Player *plr = getPlayer(sock);
+
+#define P_FE2CL_REP_NANO_BOOK_SUBSET 822083892
+
+    int16_t id = 37; // TODO: confirm?
+    INITSTRUCT(sP_FE2CL_REP_NANO_BOOK_SUBSET, pkt);
+
+    pkt.PCUID = plr->iID;
+    pkt.bookSize = NANO_COUNT;
+
+    while (id < NANO_COUNT) {
+        pkt.elementOffset = id;
+
+        for (int i = id - pkt.elementOffset; i < NANO_COUNT && i < 10; id++, i = id - pkt.elementOffset) {
+            pkt.element[i] = {id, 0, 150};
+            std::cout << "adding " << (int) id << std::endl;
+        }
+
+        std::cout << "sending subset" << std::endl;
+        sock->sendPacket((void*)&pkt, P_FE2CL_REP_NANO_BOOK_SUBSET, sizeof(sP_FE2CL_REP_NANO_BOOK_SUBSET));
+    }
+#endif
 }
 
 void PlayerManager::sendToViewable(CNSocket* sock, void* buf, uint32_t type, size_t size) {
