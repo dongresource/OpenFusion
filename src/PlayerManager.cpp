@@ -289,9 +289,7 @@ void PlayerManager::enterPlayer(CNSocket* sock, CNPacketData* data) {
 
     MissionManager::failInstancedMissions(sock);
 
-#ifdef ACADEMY
     sendNanoBookSubset(sock);
-#endif
 
     // initial buddy sync
     BuddyManager::refreshBuddyList(sock);
@@ -303,6 +301,7 @@ void PlayerManager::enterPlayer(CNSocket* sock, CNPacketData* data) {
 
 void PlayerManager::sendNanoBookSubset(CNSocket *sock) {
 #ifdef ACADEMY
+//#if 0
     Player *plr = getPlayer(sock);
 
 #define P_FE2CL_REP_NANO_BOOK_SUBSET 822083892
@@ -313,11 +312,11 @@ void PlayerManager::sendNanoBookSubset(CNSocket *sock) {
     pkt.PCUID = plr->iID;
     pkt.bookSize = NANO_COUNT;
 
-    while (id < NANO_COUNT) {
+    while (id < NANO_COUNT+1) {
         pkt.elementOffset = id;
 
-        for (int i = id - pkt.elementOffset; i < NANO_COUNT && i < 10; id++, i = id - pkt.elementOffset) {
-            pkt.element[i] = {id, 0, 150};
+        for (int i = id - pkt.elementOffset; i < NANO_COUNT+1 && i < 10; id++, i = id - pkt.elementOffset) {
+            pkt.element[i] = {id, 36, 150};
             std::cout << "adding " << (int) id << std::endl;
         }
 
