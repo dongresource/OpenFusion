@@ -7,7 +7,8 @@
 #define AQINVEN_COUNT 50
 #define ABANK_COUNT 200
 
-#define NANO_COUNT 57
+// 56 real nanos, zeroeth entry, Van Kleiss
+#define NANO_COUNT 58
 
 #pragma pack(push)
 

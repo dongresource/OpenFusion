@@ -159,6 +159,8 @@ void CNLoginServer::login(CNSocket* sock, CNPacketData* data) {
     resp.iPaymentFlag = 1;
     resp.iOpenBetaFlag = 0;
     resp.uiSvrTime = getTime();
+    // do not prompt player to "enable freechat", which would only close the client
+    resp.iChatEnabled = 1;
 
     // send the resp in with original key
     sock->sendPacket((void*)&resp, P_LS2CL_REP_LOGIN_SUCC, sizeof(sP_LS2CL_REP_LOGIN_SUCC));
