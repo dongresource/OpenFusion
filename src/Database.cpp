@@ -1340,7 +1340,7 @@ void Database::updatePlayer(Player *player) {
         )";
     sqlite3_prepare_v2(db, sql, -1, &stmt, NULL);
 
-    for (int i = 0; i < SIZEOF_NANO_BANK_SLOT; i++) {
+    for (int i = 0; i < NANO_COUNT; i++) {
         if (player->Nanos[i].iID == 0)
             continue;
 
