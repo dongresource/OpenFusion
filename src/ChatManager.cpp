@@ -208,8 +208,10 @@ void summonWCommand(std::string full, std::vector<std::string>& args, CNSocket* 
         return;
     }
 
+    int limit = NPCManager::NPCData.back()["m_iNpcNumber"];
+
     // permission & sanity check
-    if (type >= 3314)
+    if (type > limit)
         return;
 
     int team = NPCManager::NPCData[type]["m_iTeam"];
@@ -570,7 +572,7 @@ void summonGroupCommand(std::string full, std::vector<std::string>& args, CNSock
     int limit = NPCManager::NPCData.back()["m_iNpcNumber"];
 
     // permission & sanity check
-    if (type >= limit || type2 >= limit || count > 5) {
+    if (type > limit || type2 > limit || count > 5) {
         ChatManager::sendServerMessage(sock, "Invalid parameters; double check types and count");
         return;
     }
