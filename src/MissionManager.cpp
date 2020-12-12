@@ -489,16 +489,11 @@ void MissionManager::updateFusionMatter(CNSocket* sock, int fusion) {
     plr->level++;
 
     INITSTRUCT(sP_FE2CL_REP_PC_CHANGE_LEVEL_SUCC, response);
-    INITSTRUCT(sP_FE2CL_REP_PC_CHANGE_LEVEL, bcast);
 
     response.iFusionMatter = plr->fusionmatter;
     response.iLevel = plr->level;
 
-    bcast.iPC_ID = plr->iID;
-    bcast.iPC_Level = plr->level;
-
     sock->sendPacket((void*)&response, P_FE2CL_REP_PC_CHANGE_LEVEL_SUCC, sizeof(sP_FE2CL_REP_PC_CHANGE_LEVEL_SUCC));
-    PlayerManager::sendToViewable(sock, (void*)&bcast, P_FE2CL_REP_PC_CHANGE_LEVEL, sizeof(sP_FE2CL_REP_PC_CHANGE_LEVEL));
 #endif
 
     // play the beam animation for other players
