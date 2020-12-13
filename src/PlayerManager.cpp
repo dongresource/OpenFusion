@@ -332,14 +332,12 @@ void PlayerManager::sendNanoBookSubset(CNSocket *sock) {
             // this one should be kept
             pkt.element[i] = plr->Nanos[id];
 
-            std::cout << "adding " << (int) id << std::endl;
+            //std::cout << "adding " << (int) id << std::endl;
         }
 
-        std::cout << "sending subset" << std::endl;
+        //std::cout << "sending subset" << std::endl;
         sock->sendPacket((void*)&pkt, P_FE2CL_REP_NANO_BOOK_SUBSET, sizeof(sP_FE2CL_REP_NANO_BOOK_SUBSET));
     }
-
-    // TODO: possibly send a player refresh packet from here
 #endif
 }
 
