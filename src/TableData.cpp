@@ -330,8 +330,8 @@ void TableData::init() {
             NPCManager::updateNPCPosition(nextId, npc["iX"], npc["iY"], npc["iZ"], instanceID, npc["iAngle"]);
             nextId++;
 
-            if (npc["id"] == 641 || npc["id"] == 642)
-                NPCManager::RespawnPoints.push_back({ npc["x"], npc["y"], ((int)npc["z"]) + RESURRECT_HEIGHT, instanceID });
+            if (npc["iNPCType"] == 641 || npc["iNPCType"] == 642)
+                NPCManager::RespawnPoints.push_back({ npc["iX"], npc["iY"], ((int)npc["iZ"]) + RESURRECT_HEIGHT, instanceID });
         }
     }
     catch (const std::exception& err) {
