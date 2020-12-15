@@ -1080,7 +1080,7 @@ void Database::getPlayer(Player* plr, int id) {
         int id = sqlite3_column_int(stmt, 0);
 
         // for extra safety
-        if (id > SIZEOF_NANO_BANK_SLOT)
+        if (id > NANO_COUNT)
             continue;
 
         sNano* nano = &plr->Nanos[id];
