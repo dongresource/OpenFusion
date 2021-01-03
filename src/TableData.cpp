@@ -267,8 +267,16 @@ void TableData::init() {
         // single mobs
         for (nlohmann::json::iterator _npc = npcData.begin(); _npc != npcData.end(); _npc++) {
             auto npc = _npc.value();
-            auto td = NPCManager::NPCData[(int)npc["iNPCType"]];
             uint64_t instanceID = npc.find("iMapNum") == npc.end() ? INSTANCE_OVERWORLD : (int)npc["iMapNum"];
+            nlohmann::json td;
+
+            // tolerate nonexistent mobs
+            try {
+                td = NPCManager::NPCData.at((int)npc["iNPCType"]);
+            } catch (const std::exception& err) {
+                nextId++;
+                continue;
+            }
 
 #ifdef ACADEMY
             // do not spawn NPCs in the future
@@ -291,9 +299,18 @@ void TableData::init() {
         // single mobs
         for (nlohmann::json::iterator _group = groupData.begin(); _group != groupData.end(); _group++) {
             auto leader = _group.value();
-            auto td = NPCManager::NPCData[(int)leader["iNPCType"]];
             uint64_t instanceID = leader.find("iMapNum") == leader.end() ? INSTANCE_OVERWORLD : (int)leader["iMapNum"];
             auto followers = leader["aFollowers"];
+            nlohmann::json td;
+
+            // tolerate nonexistent mobs
+            try {
+                td = NPCManager::NPCData.at((int)leader["iNPCType"]);
+            } catch (const std::exception& err) {
+                nextId++;
+                nextId += followers.size();
+                continue;
+            }
 
 #ifdef ACADEMY
             // do not spawn NPCs in the future
@@ -318,7 +335,16 @@ void TableData::init() {
                 int followerCount = 0;
                 for (nlohmann::json::iterator _fol = followers.begin(); _fol != followers.end(); _fol++) {
                     auto follower = _fol.value();
-                    auto tdFol = NPCManager::NPCData[(int)follower["iNPCType"]];
+                    nlohmann::json tdFol;
+
+                    // tolerate nonexistent mobs
+                    try {
+                        tdFol = NPCManager::NPCData.at((int)follower["iNPCType"]);
+                    } catch (const std::exception& err) {
+                        nextId++;
+                        continue;
+                    }
+
                     Mob* tmpFol = new Mob((int)leader["iX"] + (int)follower["iOffsetX"], (int)leader["iY"] + (int)follower["iOffsetY"], leader["iZ"], leader["iAngle"], instanceID, follower["iNPCType"], tdFol, nextId);
 
                     NPCManager::NPCs[nextId] = tmpFol;
@@ -579,7 +605,9 @@ void TableData::loadDrops() {
             if (ItemManager::ItemData.find(itemDataKey) == ItemManager::ItemData.end()) {
                 char buff[255];
                 sprintf(buff, "Unknown item with Id %d and Type %d", (int)item["Id"], (int)item["Type"]);
-                throw TableException(std::string(buff));
+                //throw TableException(std::string(buff));
+                //std::cout << buff << std::endl;
+                continue;
             }
 
             std::map<std::pair<int32_t, int32_t>, ItemManager::Item>::iterator toAdd = ItemManager::ItemData.find(itemDataKey);
