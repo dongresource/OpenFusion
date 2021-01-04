@@ -173,10 +173,6 @@ void ItemManager::itemMoveHandler(CNSocket* sock, CNPacketData* data) {
             equipChange.EquipSlotItem = resp.ToSlotItem;
         }
 
-        // unequip vehicle if equip slot 8 is 0
-        if (plr->Equip[8].iID == 0)
-            plr->iPCState = 0;
-
         // send equip event to other players
         PlayerManager::sendToViewable(sock, (void*)&equipChange, P_FE2CL_PC_EQUIP_CHANGE, sizeof(sP_FE2CL_PC_EQUIP_CHANGE));
 
@@ -986,10 +982,10 @@ void ItemManager::setItemStats(Player* plr) {
             std::cout << "[WARN] setItemStats(): getItemData() returned NULL" << std::endl;
             continue;
         }
-        plr->pointDamage += itemStatsDat->pointDamage;
-        plr->groupDamage += itemStatsDat->groupDamage;
+        plr->pointDamage += itemStatsDat->pointDamage * 2;
+        plr->groupDamage += itemStatsDat->groupDamage * 2;
         plr->fireRate += itemStatsDat->fireRate;
-        plr->defense += itemStatsDat->defense;
+        plr->defense += itemStatsDat->defense * 2;
     }
 }
 
