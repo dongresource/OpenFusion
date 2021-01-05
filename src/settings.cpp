@@ -28,7 +28,7 @@ int settings::SPAWN_Z = 8450;
 #endif
 
 int settings::SPAWN_ANGLE = 130;
-std::string settings::NPCJSON = "tdata/NPCs.json";
+std::string settings::NPCJSON = "tdata/2008/NPCs.json";
 std::string settings::MOBJSON = "tdata/mobs.json";
 std::string settings::EGGSJSON = "tdata/eggs.json";
 std::string settings::GRUNTWORKJSON = "tdata/gruntwork.json";
@@ -42,7 +42,7 @@ std::string settings::DROPSJSON = "tdata/1013/drops.json";
 std::string settings::PATHJSON = "tdata/1013/paths.json";
 #else
 std::string settings::DROPSJSON = "tdata/drops.json";
-std::string settings::XDTJSON = "tdata/xdt.json";
+std::string settings::XDTJSON = "tdata/2008/xdt.json";
 std::string settings::PATHJSON = "tdata/paths.json";
 #endif
 
