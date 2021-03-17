@@ -8,7 +8,7 @@
 #include <map>
 #include <string>
 
-#include "Player.hpp"
+#include "OpenFusion.hpp"
 
 namespace CNSharedData {
     // serialkey corresponds to player data

@@ -1,22 +1,6 @@
-#include "core/Core.hpp"
+#include "OpenFusion.hpp"
 #include "core/CNShared.hpp"
-#include "servers/CNShardServer.hpp"
 #include "db/Database.hpp"
-#include "PlayerManager.hpp"
-#include "NPCManager.hpp"
-#include "Missions.hpp"
-#include "Items.hpp"
-#include "Nanos.hpp"
-#include "Groups.hpp"
-#include "Chat.hpp"
-#include "Buddies.hpp"
-#include "Combat.hpp"
-#include "Racing.hpp"
-#include "BuiltinCommands.hpp"
-#include "Abilities.hpp"
-#include "Eggs.hpp"
-
-#include "settings.hpp"
 
 #include <assert.h>
 

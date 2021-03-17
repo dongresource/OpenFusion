@@ -1,7 +1,4 @@
-#include "Chat.hpp"
-#include "PlayerManager.hpp"
-#include "Groups.hpp"
-#include "CustomCommands.hpp"
+#include "OpenFusion.hpp"
 
 #include <assert.h>
 

@@ -1,9 +1,4 @@
-#include "Chunking.hpp"
-#include "PlayerManager.hpp"
-#include "NPCManager.hpp"
-#include "settings.hpp"
-#include "Combat.hpp"
-#include "Eggs.hpp"
+#include "OpenFusion.hpp"
 
 using namespace Chunking;
 

@@ -1,12 +1,5 @@
-#include "Email.hpp"
-
-#include "core/Core.hpp"
-#include "servers/CNShardServer.hpp"
-
+#include "OpenFusion.hpp"
 #include "db/Database.hpp"
-#include "PlayerManager.hpp"
-#include "Items.hpp"
-#include "Chat.hpp"
 
 using namespace Email;
 

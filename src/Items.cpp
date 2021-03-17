@@ -1,12 +1,4 @@
-#include "servers/CNShardServer.hpp"
-#include "Items.hpp"
-#include "PlayerManager.hpp"
-#include "Nanos.hpp"
-#include "NPCManager.hpp"
-#include "Player.hpp"
-#include "Abilities.hpp"
-#include "Missions.hpp"
-#include "Eggs.hpp"
+#include "OpenFusion.hpp"
 
 #include <string.h> // for memset()
 #include <assert.h>

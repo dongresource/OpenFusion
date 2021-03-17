@@ -1,6 +1,7 @@
-#include <iostream>
-#include "settings.hpp"
+#include "OpenFusion.hpp"
 #include "INIReader.hpp"
+
+#include <iostream>
 
 // defaults :)
 int settings::VERBOSITY = 1;

@@ -1,10 +1,4 @@
-#include "core/Core.hpp"
-#include "Eggs.hpp"
-#include "PlayerManager.hpp"
-#include "Items.hpp"
-#include "Nanos.hpp"
-#include "Abilities.hpp"
-#include "Groups.hpp"
+#include "OpenFusion.hpp"
 
 #include <assert.h>
 

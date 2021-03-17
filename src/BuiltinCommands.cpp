@@ -1,8 +1,4 @@
-#include "BuiltinCommands.hpp"
-#include "PlayerManager.hpp"
-#include "Chat.hpp"
-#include "Items.hpp"
-#include "Missions.hpp"
+#include "OpenFusion.hpp"
 
 // helper function, not a packet handler
 void BuiltinCommands::setSpecialState(CNSocket* sock, CNPacketData* data) {

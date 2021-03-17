@@ -1,10 +1,4 @@
-#include "MobAI.hpp"
-#include "Player.hpp"
-#include "Racing.hpp"
-#include "Transport.hpp"
-#include "Nanos.hpp"
-#include "Combat.hpp"
-#include "Abilities.hpp"
+#include "OpenFusion.hpp"
 
 #include <cmath>
 #include <limits.h>

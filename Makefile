@@ -90,30 +90,7 @@ CXXHDR=\
 	vendor/JSON.hpp\
 	vendor/INIReader.hpp\
 	vendor/JSON.hpp\
-	src/Chat.hpp\
-	src/CustomCommands.hpp\
-	src/Email.hpp\
-	src/Eggs.hpp\
-	src/Missions.hpp\
-	src/MobAI.hpp\
-	src/Combat.hpp\
-	src/Nanos.hpp\
-	src/Abilities.hpp\
-	src/Items.hpp\
-	src/NPCManager.hpp\
-	src/Player.hpp\
-	src/PlayerManager.hpp\
-	src/PlayerMovement.hpp\
-	src/BuiltinCommands.hpp\
-	src/settings.hpp\
-	src/Transport.hpp\
-	src/TableData.hpp\
-	src/Chunking.hpp\
-	src/Buddies.hpp\
-	src/Groups.hpp\
-	src/Racing.hpp\
-	src/Vendor.hpp\
-	src/Trading.hpp\
+	src/OpenFusion.hpp\
 
 COBJ=$(CSRC:.c=.o)
 CXXOBJ=$(CXXSRC:.cpp=.o)

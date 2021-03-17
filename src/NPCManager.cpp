@@ -1,16 +1,4 @@
-#include "NPCManager.hpp"
-#include "Items.hpp"
-#include "settings.hpp"
-#include "Combat.hpp"
-#include "Missions.hpp"
-#include "Chunking.hpp"
-#include "Nanos.hpp"
-#include "TableData.hpp"
-#include "Groups.hpp"
-#include "Racing.hpp"
-#include "Vendor.hpp"
-#include "Abilities.hpp"
-#include "Eggs.hpp"
+#include "OpenFusion.hpp"
 
 #include <cmath>
 #include <algorithm>
@@ -20,7 +8,6 @@
 #include <assert.h>
 #include <limits.h>
 
-#include "JSON.hpp"
 
 using namespace NPCManager;
 

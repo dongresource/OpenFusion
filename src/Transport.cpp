@@ -1,10 +1,4 @@
-#include "servers/CNShardServer.hpp"
-#include "PlayerManager.hpp"
-#include "Nanos.hpp"
-#include "Transport.hpp"
-#include "TableData.hpp"
-#include "Combat.hpp"
-#include "MobAI.hpp"
+#include "OpenFusion.hpp"
 
 #include <unordered_map>
 #include <cmath>

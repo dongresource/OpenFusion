@@ -1,10 +1,4 @@
-#include "Abilities.hpp"
-#include "PlayerManager.hpp"
-#include "Player.hpp"
-#include "NPCManager.hpp"
-#include "Nanos.hpp"
-#include "Groups.hpp"
-#include "Eggs.hpp"
+#include "OpenFusion.hpp"
 
 /*
  * TODO: This file is in desperate need of deduplication and rewriting.

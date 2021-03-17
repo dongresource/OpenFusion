@@ -1,5 +1,4 @@
-#include "Trading.hpp"
-#include "PlayerManager.hpp"
+#include "OpenFusion.hpp"
 
 using namespace Trading;
 

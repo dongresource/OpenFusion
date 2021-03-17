@@ -1,17 +1,5 @@
-#include "TableData.hpp"
-#include "NPCManager.hpp"
-#include "Transport.hpp"
-#include "Items.hpp"
-#include "settings.hpp"
-#include "Missions.hpp"
-#include "Chunking.hpp"
-#include "Nanos.hpp"
-#include "Racing.hpp"
-#include "Vendor.hpp"
-#include "Abilities.hpp"
-#include "Eggs.hpp"
+#include "OpenFusion.hpp"
 
-#include "JSON.hpp"
 
 #include <fstream>
 #include <cmath>

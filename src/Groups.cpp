@@ -1,8 +1,4 @@
-#include "servers/CNShardServer.hpp"
-#include "PlayerManager.hpp"
-#include "Groups.hpp"
-#include "Nanos.hpp"
-#include "Abilities.hpp"
+#include "OpenFusion.hpp"
 
 #include <iostream>
 #include <chrono>

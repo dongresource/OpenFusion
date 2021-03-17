@@ -1,6 +1,4 @@
-#include "PlayerMovement.hpp"
-#include "PlayerManager.hpp"
-#include "core/Core.hpp"
+#include "OpenFusion.hpp"
 
 static void movePlayer(CNSocket* sock, CNPacketData* data) {
     if (data->size != sizeof(sP_CL2FE_REQ_PC_MOVE))

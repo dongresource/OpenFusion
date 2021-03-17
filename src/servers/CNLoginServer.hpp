@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/Core.hpp"
-#include "Player.hpp"
+#include "OpenFusion.hpp"
 
 #include <map>
 

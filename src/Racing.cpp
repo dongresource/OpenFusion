@@ -1,10 +1,5 @@
-#include "servers/CNShardServer.hpp"
-#include "Racing.hpp"
-#include "PlayerManager.hpp"
-#include "Missions.hpp"
-#include "Items.hpp"
+#include "OpenFusion.hpp"
 #include "db/Database.hpp"
-#include "NPCManager.hpp"
 
 using namespace Racing;
 

@@ -1,8 +1,4 @@
-#include "servers/CNShardServer.hpp"
-#include "Missions.hpp"
-#include "PlayerManager.hpp"
-#include "Nanos.hpp"
-#include "Items.hpp"
+#include "OpenFusion.hpp"
 
 #include "string.h"
 

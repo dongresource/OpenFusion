@@ -1,13 +1,4 @@
-#include "Combat.hpp"
-#include "PlayerManager.hpp"
-#include "Nanos.hpp"
-#include "NPCManager.hpp"
-#include "Items.hpp"
-#include "Missions.hpp"
-#include "Groups.hpp"
-#include "Transport.hpp"
-#include "Racing.hpp"
-#include "Abilities.hpp"
+#include "OpenFusion.hpp"
 
 #include <assert.h>
 

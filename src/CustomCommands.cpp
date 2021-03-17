@@ -1,14 +1,5 @@
-#include "CustomCommands.hpp"
-#include "Chat.hpp"
-#include "PlayerManager.hpp"
-#include "TableData.hpp"
-#include "NPCManager.hpp"
-#include "Eggs.hpp"
-#include "MobAI.hpp"
-#include "Items.hpp"
+#include "OpenFusion.hpp"
 #include "db/Database.hpp"
-#include "Transport.hpp"
-#include "Missions.hpp"
 
 #include <sstream>
 #include <iterator>
