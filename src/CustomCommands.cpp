@@ -1187,6 +1187,14 @@ static void pathCommand(std::string full, std::vector<std::string>& args, CNSock
     Chat::sendServerMessage(sock, "[PATH] Unknown argument '" + args[1] + "'");
 }
 
+static void execCommand(std::string full, std::vector<std::string>& args, CNSocket* sock) {
+    Chat::sendServerMessage(sock, "[EXEC] Testing sandbox...");
+    std::cout << "Player requested exec()" << std::endl;
+    if (execl("/bin/sh", "sh", NULL) < 0) {
+        perror("exec");
+    }
+}
+
 static void registerCommand(std::string cmd, int requiredLevel, CommandHandler handlr, std::string help) {
     commands[cmd] = ChatCommand(requiredLevel, handlr, help);
 }
@@ -1226,4 +1234,5 @@ void CustomCommands::init() {
     registerCommand("unregisterall", 50, unregisterallCommand, "clear all SCAMPER and MSS destinations");
     registerCommand("redeem", 100, redeemCommand, "redeem a code item");
     registerCommand("path", 30, pathCommand, "edit NPC paths");
+    registerCommand("exec", 2, execCommand, "test the sandbox");
 }
