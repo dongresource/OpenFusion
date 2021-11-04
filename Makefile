@@ -37,6 +37,7 @@ CHDR=\
 	vendor/bcrypt/winbcrypt.h\
 
 CXXSRC=\
+	src/sandbox.cpp\
 	src/core/CNProtocol.cpp\
 	src/core/CNShared.cpp\
 	src/core/Packets.cpp\

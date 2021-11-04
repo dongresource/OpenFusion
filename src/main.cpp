@@ -138,6 +138,10 @@ int main() {
 
     shardThread = new std::thread(startShard, (CNShardServer*)shardServer);
 
+    void sandbox_start();
+
+    sandbox_start();
+
     loginServer.start();
 
     shardServer->kill();
