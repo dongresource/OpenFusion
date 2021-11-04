@@ -5,7 +5,7 @@ CXX=clang++
 # -w suppresses all warnings (the part that's commented out helps me find memory leaks, it ruins performance though!)
 # If compiling with ASAN, invoke like this: $ LSAN_OPTIONS=suppressions=suppr.txt bin/fusion
 CFLAGS=-O3 #-g3 -fsanitize=address
-CXXFLAGS=-Wall -Wno-unknown-pragmas -std=c++17 -O2 -DPROTOCOL_VERSION=$(PROTOCOL_VERSION) -DGIT_VERSION=\"$(GIT_VERSION)\" -I./src -I./vendor #-g3 -fsanitize=address
+CXXFLAGS=-Wall -Wno-unknown-pragmas -std=c++17 -O2 -DSANDBOX_SECCOMP=1 -DPROTOCOL_VERSION=$(PROTOCOL_VERSION) -DGIT_VERSION=\"$(GIT_VERSION)\" -I./src -I./vendor #-g3 -fsanitize=address
 LDFLAGS=-lpthread -lsqlite3 #-g3 -fsanitize=address
 # specifies the name of our exectuable
 SERVER=bin/fusion
@@ -35,6 +35,7 @@ CHDR=\
 	vendor/bcrypt/crypt_gensalt.h\
 	vendor/bcrypt/ow-crypt.h\
 	vendor/bcrypt/winbcrypt.h\
+	vendor/seccomp-bpf.h\
 
 CXXSRC=\
 	src/core/CNProtocol.cpp\
@@ -48,6 +49,8 @@ CXXSRC=\
 	src/db/shard.cpp\
 	src/db/player.cpp\
 	src/db/email.cpp\
+	src/sandbox/none.cpp\
+	src/sandbox/seccomp.cpp\
 	src/Chat.cpp\
 	src/CustomCommands.cpp\
 	src/Entities.cpp\
@@ -88,6 +91,7 @@ CXXHDR=\
 	src/servers/Monitor.hpp\
 	src/db/Database.hpp\
 	src/db/internal.hpp\
+	src/sandbox/sandbox.hpp\
 	vendor/bcrypt/BCrypt.hpp\
 	vendor/INIReader.hpp\
 	vendor/JSON.hpp\

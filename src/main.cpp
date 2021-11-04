@@ -25,6 +25,7 @@
 #include "Rand.hpp"
 
 #include "settings.hpp"
+#include "sandbox/sandbox.hpp"
 
 #include "../version.h"
 
@@ -48,6 +49,7 @@ CNShardServer *shardServer = nullptr;
 std::thread *shardThread = nullptr;
 
 void startShard(CNShardServer* server) {
+    sandbox_start();
     server->start();
 }
 
@@ -94,11 +96,15 @@ int main() {
 #else
     initsignals();
 #endif
-    Rand::init(getTime());
     settings::init();
+
+    sandbox_init();
+
     std::cout << "[INFO] OpenFusion v" GIT_VERSION << std::endl;
     std::cout << "[INFO] Protocol version: " << PROTOCOL_VERSION << std::endl;
     std::cout << "[INFO] Intializing Packet Managers..." << std::endl;
+
+    Rand::init(getTime());
     TableData::init();
     PlayerManager::init();
     PlayerMovement::init();
@@ -137,6 +143,8 @@ int main() {
     shardServer = new CNShardServer(settings::SHARDPORT);
 
     shardThread = new std::thread(startShard, (CNShardServer*)shardServer);
+
+    sandbox_start();
 
     loginServer.start();
 
