@@ -49,7 +49,7 @@ CNShardServer *shardServer = nullptr;
 std::thread *shardThread = nullptr;
 
 void startShard(CNShardServer* server) {
-    sandbox_start();
+    //sandbox_start();
     server->start();
 }
 

@@ -14,6 +14,12 @@
 
 #include "seccomp-bpf.h"
 
+// our own wrapper for the seccomp() syscall
+// TODO: should this be conditional on a feature check or something?
+static inline int seccomp(unsigned int operation, unsigned int flags, void *args) {
+    return syscall(__NR_seccomp, operation, flags, args);
+}
+
 #define DENY_SYSCALL(name) \
     BPF_JUMP(BPF_JMP+BPF_JEQ+BPF_K, __NR_##name, 0, 1), \
     BPF_STMT(BPF_RET+BPF_K, SECCOMP_RET_KILL_PROCESS)
@@ -52,8 +58,9 @@ void sandbox_start() {
         exit(1);
     }
 
-    if (prctl(PR_SET_SECCOMP, SECCOMP_MODE_FILTER, &prog) < 0) {
-        perror("prctl (seccomp)");
+    //if (prctl(PR_SET_SECCOMP, SECCOMP_MODE_FILTER, &prog) < 0) {
+    if (seccomp(SECCOMP_SET_MODE_FILTER, SECCOMP_FILTER_FLAG_TSYNC, &prog) < 0) {
+        perror("seccomp");
         exit(1);
     }
 }
