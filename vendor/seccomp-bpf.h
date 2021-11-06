@@ -67,9 +67,8 @@ struct seccomp_data {
 # define REG_SYSCALL	REG_RAX
 # define ARCH_NR	AUDIT_ARCH_X86_64
 #else
-# warning "Platform does not support seccomp filter yet"
-# define REG_SYSCALL	0
-# define ARCH_NR	0
+# define REG_SYSCALL	REG_R7
+# define ARCH_NR	AUDIT_ARCH_ARM
 #endif
 
 #define VALIDATE_ARCHITECTURE \

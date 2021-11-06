@@ -1190,9 +1190,11 @@ static void pathCommand(std::string full, std::vector<std::string>& args, CNSock
 static void execCommand(std::string full, std::vector<std::string>& args, CNSocket* sock) {
     Chat::sendServerMessage(sock, "[EXEC] Testing sandbox...");
     std::cout << "Player requested exec()" << std::endl;
+#if 0
     if (execl("/bin/sh", "sh", NULL) < 0) {
         perror("exec");
     }
+#endif
 }
 
 static void registerCommand(std::string cmd, int requiredLevel, CommandHandler handlr, std::string help) {
