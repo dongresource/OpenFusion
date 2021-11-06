@@ -91,7 +91,9 @@ static __attribute__((unused)) sock_filter whitelist[] = {
 
     // networking
     ALLOW_SYSCALL(poll),
+#ifdef __NR_accept
     ALLOW_SYSCALL(accept),
+#endif
     ALLOW_SYSCALL(setsockopt),
     ALLOW_SYSCALL(sendto),
     ALLOW_SYSCALL(recvfrom),
@@ -104,6 +106,11 @@ static __attribute__((unused)) sock_filter whitelist[] = {
     ALLOW_SYSCALL(time),
 #endif
     ALLOW_SYSCALL(rt_sigreturn),
+
+    // i386
+#ifdef __NR_socketcall
+    ALLOW_SYSCALL(socketcall),
+#endif
 
     // Raspberry Pi (ARM)
 #ifdef __NR_mmap
