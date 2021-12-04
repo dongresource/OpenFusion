@@ -1,26 +1,50 @@
+include config.mk
+
 GIT_VERSION!=git describe --tags
 
-CC=clang
-CXX=clang++
-# -w suppresses all warnings (the part that's commented out helps me find memory leaks, it ruins performance though!)
-# If compiling with ASAN, invoke like this: $ LSAN_OPTIONS=suppressions=suppr.txt bin/fusion
-CFLAGS=-O3 #-g3 -fsanitize=address
-CXXFLAGS=-Wall -Wno-unknown-pragmas -std=c++17 -O2 -DPROTOCOL_VERSION=$(PROTOCOL_VERSION) -DGIT_VERSION=\"$(GIT_VERSION)\" -I./src -I./vendor #-g3 -fsanitize=address
-LDFLAGS=-lpthread -lsqlite3 #-g3 -fsanitize=address
-# specifies the name of our exectuable
-SERVER=bin/fusion
+CXXFLAGS+=-DPROTOCOL_VERSION=$(PROTOCOL_VERSION) -DGIT_VERSION=\"$(GIT_VERSION)\"
 
-# assign protocol version
-# this can be overriden by ex. make PROTOCOL_VERSION=728
-PROTOCOL_VERSION?=104
+# apply Windows overrides
+WIN_OVERRIDE-yes=no
+WIN_OVERRIDE-$(CONFIG_WINDOWS)=
 
-# Windows-specific
-WIN_CC=x86_64-w64-mingw32-gcc
-WIN_CXX=x86_64-w64-mingw32-g++
-WIN_CFLAGS=-O3 #-g3 -fsanitize=address
-WIN_CXXFLAGS=-D_WIN32_WINNT=0x0601 -Wall -Wno-unknown-pragmas -std=c++17 -O3 -DPROTOCOL_VERSION=$(PROTOCOL_VERSION) -DGIT_VERSION=\"$(GIT_VERSION)\" -I./src -I./vendor #-g3 -fsanitize=address
-WIN_LDFLAGS=-static -lws2_32 -lwsock32 -lsqlite3 #-g3 -fsanitize=address
-WIN_SERVER=bin/winfusion.exe
+CC$(WIN_OVERRIDE-yes)=$(WIN_CC)
+CXX$(WIN_OVERRIDE-yes)=$(WIN_CXX)
+STRIP$(WIN_OVERRIDE-yes)=$(WIN_STRIP)
+LDFLAGS$(WIN_OVERRIDE-yes)=$(WIN_LDFLAGS)
+SERVER$(WIN_OVERRIDE-yes)=$(WIN_SERVER)
+# append CFLAGS, instead of overriding
+CFLAGS-$(CONFIG_WINDOWS)+=$(WIN_CFLAGS)
+
+# CONFIG_RELEASE is the inverse of CONFIG_DEBUG
+RELEASE_OVERRIDE-yes=
+RELEASE_OVERRIDE-$(CONFIG_DEBUG)=no
+
+CFLAGS-yes$(RELEASE_OVERRIDE-yes)+=$(RELEASE_CFLAGS)
+LDFLAGS-yes$(RELEASE_OVERRIDE-yes)+=$(RELEASE_LDFLAGS)
+
+# strip resulting binary if requested
+STRIP_OVERRIDE-yes=
+STRIP_OVERRIDE-$(CONFIG_STRIP)=no
+STRIP$(STRIP_OVERRIDE-yes)=true
+
+# the remaining flag tweaks
+CFLAGS-$(CONFIG_DEBUG)+=$(DEBUG_CFLAGS)
+LDFLAGS-$(CONFIG_DEBUG)+=$(DEBUG_LDFLAGS)
+CFLAGS-$(CONFIG_HARDENING)+=$(HARDENING_CFLAGS)
+LDFLAGS-$(CONFIG_HARDENING)+=$(HARDENING_LDFLAGS)
+CFLAGS-$(CONFIG_GPROF)+=$(GPROF_CFLAGS)
+LDFLAGS-$(CONFIG_GPROF)+=$(GPROF_LDFLAGS)
+CFLAGS-$(CONFIG_ASAN)+=$(ASAN_CFLAGS)
+LDFLAGS-$(CONFIG_ASAN)+=$(ASAN_LDFLAGS)
+CFLAGS-$(CONFIG_32BIT)+=$(32BIT_CFLAGS)
+LDFLAGS-$(CONFIG_32BIT)+=$(32BIT_LDFLAGS)
+
+# apply
+CFLAGS+=$(CFLAGS-yes)
+LDFLAGS+=$(LDFLAGS-yes)
+
+CXXFLAGS+=$(CFLAGS)
 
 # C code; currently exclusively from vendored libraries
 CSRC=\
@@ -129,17 +153,9 @@ HDR=$(CHDR) $(CXXHDR)
 
 all: $(SERVER)
 
-windows: $(SERVER)
+.SUFFIXES: .o .c .cpp .h .hpp
 
-# assign Windows-specific values if targeting Windows
-windows : CC=$(WIN_CC)
-windows : CXX=$(WIN_CXX)
-windows : CFLAGS=$(WIN_CFLAGS)
-windows : CXXFLAGS=$(WIN_CXXFLAGS)
-windows : LDFLAGS=$(WIN_LDFLAGS)
-windows : SERVER=$(WIN_SERVER)
-
-.SUFFIX: .o .c .cpp .h .hpp
+.PHONY: all windows clean nuke
 
 .c.o:
 	$(CC) -c $(CFLAGS) -o $@ $<
@@ -153,14 +169,13 @@ $(CXXOBJ): $(HDR)
 $(SERVER): $(OBJ) $(CHDR) $(CXXHDR)
 	mkdir -p bin
 	$(CXX) $(OBJ) $(LDFLAGS) -o $(SERVER)
+	$(STRIP) $(SERVER)
 
 # compatibility with how cmake injects GIT_VERSION
 version.h:
 	touch version.h
 
 src/main.o: version.h
-
-.PHONY: all windows clean nuke
 
 # only gets rid of OpenFusion objects, so we don't need to
 # recompile the libs every time
