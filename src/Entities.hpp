@@ -26,7 +26,7 @@ struct Entity {
     // destructor must be virtual, apparently
     virtual ~Entity() {}
 
-    virtual bool isAlive() { return true; }
+    virtual bool isExtant() { return true; }
 
     // stubs
     virtual void enterIntoViewOf(CNSocket *sock) = 0;
@@ -70,6 +70,20 @@ struct EntityRef {
 };
 
 /*
+ * Interfaces
+ */
+
+class ICombatant {
+public:
+    ICombatant() {}
+    virtual ~ICombatant() {}
+
+    virtual void takeDamage(EntityRef, int) = 0;
+    virtual void heal(EntityRef, int) = 0;
+    virtual bool isAlive() = 0;
+};
+
+/*
  * Subclasses
  */
 class BaseNPC : public Entity {
@@ -98,7 +112,7 @@ public:
     sNPCAppearanceData getAppearanceData();
 };
 
-struct CombatNPC : public BaseNPC {
+struct CombatNPC : public BaseNPC, public ICombatant {
     int maxHealth = 0;
     int spawnX = 0;
     int spawnY = 0;
@@ -120,6 +134,14 @@ struct CombatNPC : public BaseNPC {
             _stepAI(this, currTime);
     }
 
+    virtual void takeDamage(EntityRef src, int amt) override {
+        // stubbed
+    }
+
+    virtual void heal(EntityRef src, int amt) override {
+       // stubbed
+    }
+
     virtual bool isAlive() override { return hp > 0; }
 };
 
@@ -137,7 +159,7 @@ struct Egg : public BaseNPC {
         kind = EntityType::EGG;
     }
 
-    virtual bool isAlive() override { return !dead; }
+    virtual bool isExtant() override { return !dead; }
 
     virtual void enterIntoViewOf(CNSocket *sock) override;
     virtual void disappearFromViewOf(CNSocket *sock) override;
