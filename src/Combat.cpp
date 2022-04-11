@@ -17,6 +17,30 @@ using namespace Combat;
 /// Player Id -> Bullet Id -> Bullet
 std::map<int32_t, std::map<int8_t, Bullet>> Combat::Bullets;
 
+void Player::takeDamage(EntityRef src, int amt) {
+    // stubbed
+}
+
+void Player::heal(EntityRef src, int amt) {
+    // stubbed
+}
+
+bool Player::isAlive() {
+    return HP > 0;
+}
+
+void CombatNPC::takeDamage(EntityRef src, int amt) {
+    // stubbed
+}
+
+void CombatNPC::heal(EntityRef src, int amt) {
+    // stubbed
+}
+
+bool CombatNPC::isAlive() {
+    return hp > 0;
+}
+
 static std::pair<int,int> getDamage(int attackPower, int defensePower, bool shouldCrit,
                                          bool batteryBoost, int attackerStyle,
                                          int defenderStyle, int difficulty) {

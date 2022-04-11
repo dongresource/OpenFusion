@@ -134,15 +134,11 @@ struct CombatNPC : public BaseNPC, public ICombatant {
             _stepAI(this, currTime);
     }
 
-    virtual void takeDamage(EntityRef src, int amt) override {
-        // stubbed
-    }
+    virtual bool isExtant() override { return hp > 0; }
 
-    virtual void heal(EntityRef src, int amt) override {
-       // stubbed
-    }
-
-    virtual bool isAlive() override { return hp > 0; }
+    virtual void takeDamage(EntityRef src, int amt) override;
+    virtual void heal(EntityRef src, int amt) override;
+    virtual bool isAlive() override;
 };
 
 // Mob is in MobAI.hpp, Player is in Player.hpp

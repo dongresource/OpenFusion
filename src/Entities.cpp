@@ -103,19 +103,6 @@ sPCAppearanceData Player::getAppearanceData() {
     return data;
 }
 
-// player combat methods; not sure if this is the right place to put them
-void Player::takeDamage(EntityRef src, int amt) {
-    // stubbed
-}
-
-void Player::heal(EntityRef src, int amt) {
-    // stubbed
-}
-
-bool Player::isAlive() {
-    return HP > 0;
-}
-
 // TODO: this is less effiecient than it was, because of memset()
 void Player::enterIntoViewOf(CNSocket *sock) {
     INITSTRUCT(sP_FE2CL_PC_NEW, pkt);
