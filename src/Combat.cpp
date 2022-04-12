@@ -38,6 +38,10 @@ int32_t Player::getID() {
     return iID;
 }
 
+void Player::step(time_t currTime) {
+    // no-op
+}
+
 int CombatNPC::takeDamage(EntityRef src, int amt) {
 
     /* REFACTOR: all of this logic is strongly coupled to mobs.
@@ -94,6 +98,10 @@ int CombatNPC::getCurrentHP() {
 
 int32_t CombatNPC::getID() {
     return id;
+}
+
+void CombatNPC::step(time_t currTime) {
+    // stubbed
 }
 
 static std::pair<int,int> getDamage(int attackPower, int defensePower, bool shouldCrit,

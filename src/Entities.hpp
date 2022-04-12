@@ -83,6 +83,8 @@ public:
     virtual bool isAlive() = 0;
     virtual int getCurrentHP() = 0;
     virtual int32_t getID() = 0;
+
+    virtual void step(time_t currTime) = 0;
 };
 
 /*
@@ -122,18 +124,11 @@ struct CombatNPC : public BaseNPC, public ICombatant {
     int level = 0;
     int speed = 300;
 
-    void (*_stepAI)(CombatNPC*, time_t) = nullptr;
-
     CombatNPC(int x, int y, int z, int angle, uint64_t iID, int t, int id, int maxHP)
         : BaseNPC(angle, iID, t, id), maxHealth(maxHP) {
         spawnX = x;
         spawnY = y;
         spawnZ = z;
-    }
-
-    virtual void stepAI(time_t currTime) {
-        if (_stepAI != nullptr)
-            _stepAI(this, currTime);
     }
 
     virtual bool isExtant() override { return hp > 0; }
@@ -143,6 +138,7 @@ struct CombatNPC : public BaseNPC, public ICombatant {
     virtual bool isAlive() override;
     virtual int getCurrentHP() override;
     virtual int32_t getID() override;
+    virtual void step(time_t currTime) override;
 };
 
 // Mob is in MobAI.hpp, Player is in Player.hpp

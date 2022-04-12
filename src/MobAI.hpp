@@ -11,11 +11,6 @@ enum class MobState {
     DEAD
 };
 
-namespace MobAI {
-    // needs to be declared before Mob's constructor
-    void step(CombatNPC*, time_t);
-};
-
 struct Mob : public CombatNPC {
     // general
     MobState state = MobState::INACTIVE;
@@ -78,7 +73,6 @@ struct Mob : public CombatNPC {
         hp = maxHealth;
 
         kind = EntityType::MOB;
-        _stepAI = MobAI::step;
     }
 
     // constructor for /summon
@@ -88,6 +82,14 @@ struct Mob : public CombatNPC {
     }
 
     ~Mob() {}
+
+    virtual void step(time_t currTime) override;
+
+    // we may or may not want these to be generalized to all CombatNPCs later
+    void roamingStep(time_t currTime);
+    void combatStep(time_t currTime);
+    void retreatStep(time_t currTime);
+    void deadStep(time_t currTime);
 
     auto operator[](std::string s) {
         return data[s];

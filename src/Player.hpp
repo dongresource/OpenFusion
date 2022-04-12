@@ -96,5 +96,7 @@ struct Player : public Entity, public ICombatant {
     virtual int getCurrentHP() override;
     virtual int32_t getID() override;
 
+    virtual void step(time_t currTime) override;
+
     sPCAppearanceData getAppearanceData();
 };
