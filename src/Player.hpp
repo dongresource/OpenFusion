@@ -90,9 +90,11 @@ struct Player : public Entity, public ICombatant {
     virtual void enterIntoViewOf(CNSocket *sock) override;
     virtual void disappearFromViewOf(CNSocket *sock) override;
 
-    virtual void takeDamage(EntityRef src, int amt) override;
+    virtual int takeDamage(EntityRef src, int amt) override;
     virtual void heal(EntityRef src, int amt) override;
     virtual bool isAlive() override;
+    virtual int getCurrentHP() override;
+    virtual int32_t getID() override;
 
     sPCAppearanceData getAppearanceData();
 };

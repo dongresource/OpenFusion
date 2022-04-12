@@ -23,6 +23,5 @@ namespace Combat {
     void init();
 
     void npcAttackPc(Mob *mob, time_t currTime);
-    int hitMob(CNSocket *sock, Mob *mob, int damage);
     void killMob(CNSocket *sock, Mob *mob);
 }
