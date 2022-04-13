@@ -157,12 +157,12 @@ struct CombatNPC : public BaseNPC, public ICombatant {
     virtual void retreatStep(time_t currTime) {}
     virtual void deadStep(time_t currTime) {}
 
-    virtual void transition(AIState newState);
+    virtual void transition(AIState newState, EntityRef src);
     virtual void onInactive() {} // no-ops by default
     virtual void onRoamStart() {}
-    virtual void onCombatStart() {}
+    virtual void onCombatStart(EntityRef src) {}
     virtual void onRetreat() {}
-    virtual void onDeath() {}
+    virtual void onDeath(EntityRef src) {}
 };
 
 // Mob is in MobAI.hpp, Player is in Player.hpp

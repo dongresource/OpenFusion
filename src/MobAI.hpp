@@ -78,9 +78,9 @@ struct Mob : public CombatNPC {
 
     virtual void onInactive() override;
     virtual void onRoamStart() override;
-    virtual void onCombatStart() override;
+    virtual void onCombatStart(EntityRef src) override;
     virtual void onRetreat() override;
-    virtual void onDeath() override;
+    virtual void onDeath(EntityRef src) override;
 
     auto operator[](std::string s) {
         return data[s];

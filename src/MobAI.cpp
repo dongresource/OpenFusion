@@ -267,7 +267,7 @@ static void dealCorruption(Mob *mob, std::vector<int> targetData, int skillID, i
 
         if (plr->HP <= 0) {
             if (!MobAI::aggroCheck(mob, getTime()))
-                mob->transition(AIState::RETREAT);
+                mob->transition(AIState::RETREAT, mob->target);
         }
     }
 
@@ -496,7 +496,7 @@ void Mob::combatStep(time_t currTime) {
     // lose aggro if the player lost connection
     if (PlayerManager::players.find(target) == PlayerManager::players.end()) {
         if (!MobAI::aggroCheck(this, getTime()))
-            transition(AIState::RETREAT);
+            transition(AIState::RETREAT, target);
         return;
     }
 
@@ -506,7 +506,7 @@ void Mob::combatStep(time_t currTime) {
     if (plr->HP <= 0
      || (plr->iSpecialState & CN_SPECIAL_STATE_FLAG__INVULNERABLE)) {
         if (!MobAI::aggroCheck(this, getTime()))
-            transition(AIState::RETREAT);
+            transition(AIState::RETREAT, target);
         return;
     }
 
@@ -611,7 +611,7 @@ void Mob::combatStep(time_t currTime) {
     int xyDistance = hypot(plr->x - roamX, plr->y - roamY);
     distance = hypot(xyDistance, plr->z - roamZ);
     if (distance >= data["m_iCombatRange"]) {
-        transition(AIState::RETREAT);
+        transition(AIState::RETREAT, target);
     }
 }
 
@@ -763,7 +763,7 @@ void Mob::onRoamStart() {
     // stub
 }
 
-void Mob::onCombatStart() {
+void Mob::onCombatStart(EntityRef src) {
     // stub
 }
 
@@ -774,6 +774,6 @@ void Mob::onRetreat() {
         MobAI::groupRetreat(this);
 }
 
-void Mob::onDeath() {
+void Mob::onDeath(EntityRef src) {
     // stub
 }

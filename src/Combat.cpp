@@ -128,7 +128,7 @@ void CombatNPC::step(time_t currTime) {
     }
 }
 
-void CombatNPC::transition(AIState newState) {
+void CombatNPC::transition(AIState newState, EntityRef src) {
     state = newState;
     switch (newState) {
     case AIState::INACTIVE:
@@ -138,13 +138,13 @@ void CombatNPC::transition(AIState newState) {
         onRoamStart();
         break;
     case AIState::COMBAT:
-        onCombatStart();
+        onCombatStart(src);
         break;
     case AIState::RETREAT:
         onRetreat();
         break;
     case AIState::DEAD:
-        onDeath();
+        onDeath(src);
         break;
     }
 }
@@ -312,7 +312,7 @@ void Combat::npcAttackPc(Mob *mob, time_t currTime) {
     PlayerManager::sendToViewable(mob->target, respbuf, P_FE2CL_NPC_ATTACK_PCs);
 
     if (plr->HP <= 0) {
-        mob->transition(AIState::RETREAT);
+        mob->transition(AIState::RETREAT, mob->target);
     }
 }
 
