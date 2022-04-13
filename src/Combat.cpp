@@ -79,7 +79,7 @@ int CombatNPC::takeDamage(EntityRef src, int amt) {
     }
 
     if (mob->hp <= 0)
-        killMob(mob->target, mob);
+        transition(AIState::DEAD, src);
 
     return amt;
 }
@@ -144,6 +144,11 @@ void CombatNPC::transition(AIState newState, EntityRef src) {
         onRetreat();
         break;
     case AIState::DEAD:
+        /* TODO: fire any triggered events
+        for (NPCEvent& event : NPCManager::NPCEvents)
+            if (event.trigger == ON_KILLED && event.npcType == type)
+                event.handler(src, this);
+        */
         onDeath(src);
         break;
     }
@@ -323,7 +328,7 @@ void Combat::npcAttackPc(Mob *mob, time_t currTime) {
  * single RNG roll per mission task, and every group member shares that same
  * set of rolls.
  */
-static void genQItemRolls(Player *leader, std::map<int, int>& rolls) {
+void Combat::genQItemRolls(Player *leader, std::map<int, int>& rolls) {
     for (int i = 0; i < leader->groupCnt; i++) {
         if (leader->groupIDs[i] == 0)
             continue;
@@ -337,79 +342,6 @@ static void genQItemRolls(Player *leader, std::map<int, int>& rolls) {
         for (int j = 0; j < ACTIVE_MISSION_COUNT; j++)
             if (member->tasks[j] != 0)
                 rolls[member->tasks[j]] = Rand::rand();
-    }
-}
-
-void Combat::killMob(CNSocket *sock, Mob *mob) {
-    mob->state = AIState::DEAD;
-    mob->target = nullptr;
-    mob->cbf = 0;
-    mob->skillStyle = -1;
-    mob->unbuffTimes.clear();
-    mob->killedTime = getTime(); // XXX: maybe introduce a shard-global time for each step?
-
-    // check for the edge case where hitting the mob did not aggro it
-    if (sock != nullptr) {
-        Player* plr = PlayerManager::getPlayer(sock);
-
-        Items::DropRoll rolled;
-        Items::DropRoll eventRolled;
-        std::map<int, int> qitemRolls;
-
-        Player *leader = PlayerManager::getPlayerFromID(plr->iIDGroup);
-        assert(leader != nullptr); // should never happen
-
-        genQItemRolls(leader, qitemRolls);
-
-        if (plr->groupCnt == 1 && plr->iIDGroup == plr->iID) {
-            Items::giveMobDrop(sock, mob, rolled, eventRolled);
-            Missions::mobKilled(sock, mob->type, qitemRolls);
-        } else {
-            for (int i = 0; i < leader->groupCnt; i++) {
-                CNSocket* sockTo = PlayerManager::getSockFromID(leader->groupIDs[i]);
-                if (sockTo == nullptr)
-                    continue;
-
-                Player *otherPlr = PlayerManager::getPlayer(sockTo);
-
-                // only contribute to group members' kills if they're close enough
-                int dist = std::hypot(plr->x - otherPlr->x + 1, plr->y - otherPlr->y + 1);
-                if (dist > 5000)
-                    continue;
-
-                Items::giveMobDrop(sockTo, mob, rolled, eventRolled);
-                Missions::mobKilled(sockTo, mob->type, qitemRolls);
-            }
-        }
-    }
-
-    // delay the despawn animation
-    mob->despawned = false;
-
-    // fire any triggered events
-    for (NPCEvent& event : NPCManager::NPCEvents)
-        if (event.trigger == ON_KILLED && event.npcType == mob->type)
-            event.handler(sock, mob);
-
-    auto it = Transport::NPCQueues.find(mob->id);
-    if (it == Transport::NPCQueues.end() || it->second.empty())
-        return;
-
-    // rewind or empty the movement queue
-    if (mob->staticPath) {
-        /*
-         * This is inelegant, but we wind forward in the path until we find the point that
-         * corresponds with the Mob's spawn point.
-         *
-         * IMPORTANT: The check in TableData::loadPaths() must pass or else this will loop forever.
-         */
-        auto& queue = it->second;
-        for (auto point = queue.front(); point.x != mob->spawnX || point.y != mob->spawnY; point = queue.front()) {
-            queue.pop();
-            queue.push(point);
-        }
-    } else {
-        Transport::NPCQueues.erase(mob->id);
     }
 }
 

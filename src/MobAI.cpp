@@ -6,6 +6,8 @@
 #include "Combat.hpp"
 #include "Abilities.hpp"
 #include "Rand.hpp"
+#include "Items.hpp"
+#include "Missions.hpp"
 
 #include <cmath>
 #include <limits.h>
@@ -431,7 +433,7 @@ static void drainMobHP(Mob *mob, int amount) {
     NPCManager::sendToViewable(mob, (void*)&respbuf, P_FE2CL_CHAR_TIME_BUFF_TIME_TICK, resplen);
 
     if (mob->hp <= 0)
-        Combat::killMob(mob->target, mob);
+        mob->transition(AIState::DEAD, mob->target);
 }
 
 void Mob::deadStep(time_t currTime) {
@@ -775,5 +777,70 @@ void Mob::onRetreat() {
 }
 
 void Mob::onDeath(EntityRef src) {
-    // stub
+    target = nullptr;
+    cbf = 0;
+    skillStyle = -1;
+    unbuffTimes.clear();
+    killedTime = getTime(); // XXX: maybe introduce a shard-global time for each step?
+
+    // check for the edge case where hitting the mob did not aggro it
+    if (src.type == EntityType::PLAYER && src.isValid()) {
+        Player* plr = PlayerManager::getPlayer(src.sock);
+
+        Items::DropRoll rolled;
+        Items::DropRoll eventRolled;
+        std::map<int, int> qitemRolls;
+
+        Player* leader = PlayerManager::getPlayerFromID(plr->iIDGroup);
+        assert(leader != nullptr); // should never happen
+
+        Combat::genQItemRolls(leader, qitemRolls);
+
+        if (plr->groupCnt == 1 && plr->iIDGroup == plr->iID) {
+            Items::giveMobDrop(src.sock, this, rolled, eventRolled);
+            Missions::mobKilled(src.sock, type, qitemRolls);
+        }
+        else {
+            for (int i = 0; i < leader->groupCnt; i++) {
+                CNSocket* sockTo = PlayerManager::getSockFromID(leader->groupIDs[i]);
+                if (sockTo == nullptr)
+                    continue;
+
+                Player* otherPlr = PlayerManager::getPlayer(sockTo);
+
+                // only contribute to group members' kills if they're close enough
+                int dist = std::hypot(plr->x - otherPlr->x + 1, plr->y - otherPlr->y + 1);
+                if (dist > 5000)
+                    continue;
+
+                Items::giveMobDrop(sockTo, this, rolled, eventRolled);
+                Missions::mobKilled(sockTo, type, qitemRolls);
+            }
+        }
+    }
+
+    // delay the despawn animation
+    despawned = false;
+
+    auto it = Transport::NPCQueues.find(id);
+    if (it == Transport::NPCQueues.end() || it->second.empty())
+        return;
+
+    // rewind or empty the movement queue
+    if (staticPath) {
+        /*
+         * This is inelegant, but we wind forward in the path until we find the point that
+         * corresponds with the Mob's spawn point.
+         *
+         * IMPORTANT: The check in TableData::loadPaths() must pass or else this will loop forever.
+         */
+        auto& queue = it->second;
+        for (auto point = queue.front(); point.x != spawnX || point.y != spawnY; point = queue.front()) {
+            queue.pop();
+            queue.push(point);
+        }
+    }
+    else {
+        Transport::NPCQueues.erase(id);
+    }
 }

@@ -17,11 +17,13 @@ struct Bullet {
     int bulletType;
 };
 
+
+
 namespace Combat {
     extern std::map<int32_t, std::map<int8_t, Bullet>> Bullets;
 
     void init();
 
     void npcAttackPc(Mob *mob, time_t currTime);
-    void killMob(CNSocket *sock, Mob *mob);
+    void genQItemRolls(Player* leader, std::map<int, int>& rolls);
 }
