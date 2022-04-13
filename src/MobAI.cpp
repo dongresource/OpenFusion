@@ -448,8 +448,7 @@ void Mob::deadStep(time_t currTime) {
 
     std::cout << "respawning mob " << id << " with HP = " << maxHealth << std::endl;
 
-    hp = maxHealth;
-    state = AIState::ROAMING;
+    transition(AIState::ROAMING, id);
 
     // if mob is a group leader/follower, spawn where the group is.
     if (groupLeader != 0) {
@@ -720,19 +719,7 @@ void Mob::retreatStep(time_t currTime) {
     // if we got there
     //if (distance <= mob->data["m_iIdleRange"]) {
     if (distance <= 10) { // retreat back to the spawn point
-        state = AIState::ROAMING;
-        hp = maxHealth;
-        killedTime = 0;
-        nextAttack = 0;
-        cbf = 0;
-
-        // cast a return home heal spell, this is the right way(tm)
-        std::vector<int> targetData = {1, 0, 0, 0, 0};
-        for (auto& pwr : Abilities::Powers)
-            if (pwr.skillType == Abilities::SkillTable[110].skillType)
-                pwr.handle(id, targetData, 110, Abilities::SkillTable[110].durationTime[0], Abilities::SkillTable[110].powerIntensity[0]);
-        // clear outlying debuffs
-        clearDebuff(this);
+        transition(AIState::ROAMING, id);
     }
 }
 
@@ -741,7 +728,18 @@ void Mob::onInactive() {
 }
 
 void Mob::onRoamStart() {
-    // stub
+    hp = maxHealth;
+    killedTime = 0;
+    nextAttack = 0;
+    cbf = 0;
+
+    // cast a return home heal spell, this is the right way(tm)
+    std::vector<int> targetData = { 1, 0, 0, 0, 0 };
+    for (auto& pwr : Abilities::Powers)
+        if (pwr.skillType == Abilities::SkillTable[110].skillType)
+            pwr.handle(id, targetData, 110, Abilities::SkillTable[110].durationTime[0], Abilities::SkillTable[110].powerIntensity[0]);
+    // clear outlying debuffs
+    clearDebuff(this);
 }
 
 void Mob::onCombatStart(EntityRef src) {
