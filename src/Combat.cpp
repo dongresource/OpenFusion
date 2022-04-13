@@ -101,62 +101,29 @@ int32_t CombatNPC::getID() {
 }
 
 void CombatNPC::step(time_t currTime) {
-    if (playersInView < 0)
-        std::cout << "[WARN] Weird playerview value " << playersInView << std::endl;
-
-    // skip movement and combat if disabled or not in view
-    if ((!MobAI::simulateMobs || playersInView == 0) && state != AIState::DEAD
-        && state != AIState::RETREAT)
-        return;
-
-    switch (state) {
-    case AIState::INACTIVE:
-        // no-op
-        break;
-    case AIState::ROAMING:
-        roamingStep(currTime);
-        break;
-    case AIState::COMBAT:
-        combatStep(currTime);
-        break;
-    case AIState::RETREAT:
-        retreatStep(currTime);
-        break;
-    case AIState::DEAD:
-        deadStep(currTime);
-        break;
+    
+    if(stateHandlers.find(state) != stateHandlers.end())
+        stateHandlers[state](this, currTime);
+    else {
+        std::cout << "[WARN] State " << (int)state << " has no handler; going inactive" << std::endl;
+        transition(AIState::INACTIVE, id);
     }
 }
 
 void CombatNPC::transition(AIState newState, EntityRef src) {
+
     state = newState;
-    switch (newState) {
-    case AIState::INACTIVE:
-        onInactive();
-        break;
-    case AIState::ROAMING:
-        onRoamStart();
-        break;
-    case AIState::COMBAT:
-        /* TODO: fire any triggered events
-        for (NPCEvent& event : NPCManager::NPCEvents)
-            if (event.trigger == ON_COMBAT && event.npcType == type)
-                event.handler(src, this);
-        */
-        onCombatStart(src);
-        break;
-    case AIState::RETREAT:
-        onRetreat();
-        break;
-    case AIState::DEAD:
-        /* TODO: fire any triggered events
-        for (NPCEvent& event : NPCManager::NPCEvents)
-            if (event.trigger == ON_KILLED && event.npcType == type)
-                event.handler(src, this);
-        */
-        onDeath(src);
-        break;
+    if (transitionHandlers.find(newState) != transitionHandlers.end())
+        transitionHandlers[newState](this, src);
+    else {
+        std::cout << "[WARN] Transition to " << (int)state << " has no handler; going inactive" << std::endl;
+        transition(AIState::INACTIVE, id);
     }
+    /* TODO: fire any triggered events
+    for (NPCEvent& event : NPCManager::NPCEvents)
+        if (event.trigger == ON_KILLED && event.npcType == type)
+            event.handler(src, this);
+    */
 }
 
 static std::pair<int,int> getDamage(int attackPower, int defensePower, bool shouldCrit,

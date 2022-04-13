@@ -6,7 +6,7 @@
 #include <stdint.h>
 #include <set>
 
-enum class EntityKind : uint8_t {
+enum EntityKind {
     INVALID,
     PLAYER,
     SIMPLE_NPC,
@@ -92,7 +92,6 @@ public:
     virtual bool isAlive() = 0;
     virtual int getCurrentHP() = 0;
     virtual int32_t getID() = 0;
-
     virtual void step(time_t currTime) = 0;
 };
 
@@ -133,11 +132,17 @@ struct CombatNPC : public BaseNPC, public ICombatant {
     AIState state = AIState::INACTIVE;
     int playersInView = 0; // for optimizing away AI in empty chunks
 
+    std::map<AIState, void (*)(CombatNPC*, time_t)> stateHandlers;
+    std::map<AIState, void (*)(CombatNPC*, EntityRef)> transitionHandlers;
+
     CombatNPC(int x, int y, int z, int angle, uint64_t iID, int t, int id, int maxHP)
         : BaseNPC(angle, iID, t, id), maxHealth(maxHP) {
         spawnX = x;
         spawnY = y;
         spawnZ = z;
+
+        stateHandlers[AIState::INACTIVE] = {};
+        transitionHandlers[AIState::INACTIVE] = {};
     }
 
     virtual bool isExtant() override { return hp > 0; }
@@ -147,19 +152,9 @@ struct CombatNPC : public BaseNPC, public ICombatant {
     virtual bool isAlive() override;
     virtual int getCurrentHP() override;
     virtual int32_t getID() override;
-
     virtual void step(time_t currTime) override;
-    virtual void roamingStep(time_t currTime) {} // no-ops by default
-    virtual void combatStep(time_t currTime) {}
-    virtual void retreatStep(time_t currTime) {}
-    virtual void deadStep(time_t currTime) {}
 
     virtual void transition(AIState newState, EntityRef src);
-    virtual void onInactive() {} // no-ops by default
-    virtual void onRoamStart() {}
-    virtual void onCombatStart(EntityRef src) {}
-    virtual void onRetreat() {}
-    virtual void onDeath(EntityRef src) {}
 };
 
 // Mob is in MobAI.hpp, Player is in Player.hpp
