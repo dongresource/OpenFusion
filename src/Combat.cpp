@@ -322,7 +322,8 @@ void Combat::npcAttackPc(Mob *mob, time_t currTime) {
     PlayerManager::sendToViewable(mob->target, respbuf, P_FE2CL_NPC_ATTACK_PCs);
 
     if (plr->HP <= 0) {
-        mob->transition(AIState::RETREAT, mob->target);
+        if (!MobAI::aggroCheck(mob, getTime()))
+            mob->transition(AIState::RETREAT, mob->target);
     }
 }
 
