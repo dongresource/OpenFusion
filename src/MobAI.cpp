@@ -68,13 +68,13 @@ void MobAI::followToCombat(Mob *mob) {
             }
             Mob* followerMob = (Mob*)NPCManager::NPCs[leadMob->groupMember[i]];
 
-            if (followerMob->state != MobState::ROAMING) // only roaming mobs should transition to combat
+            if (followerMob->state != AIState::ROAMING) // only roaming mobs should transition to combat
                 continue;
 
             enterCombat(mob->target, followerMob);
         }
 
-        if (leadMob->state != MobState::ROAMING)
+        if (leadMob->state != AIState::ROAMING)
             return;
 
         enterCombat(mob->target, leadMob);
@@ -96,19 +96,19 @@ void MobAI::groupRetreat(Mob *mob) {
         }
         Mob* followerMob = (Mob*)NPCManager::NPCs[leadMob->groupMember[i]];
 
-        if (followerMob->state != MobState::COMBAT)
+        if (followerMob->state != AIState::COMBAT)
             continue;
 
         followerMob->target = nullptr;
-        followerMob->state = MobState::RETREAT;
+        followerMob->state = AIState::RETREAT;
         clearDebuff(followerMob);
     }
 
-    if (leadMob->state != MobState::COMBAT)
+    if (leadMob->state != AIState::COMBAT)
         return;
 
     leadMob->target = nullptr;
-    leadMob->state = MobState::RETREAT;
+    leadMob->state = AIState::RETREAT;
     clearDebuff(leadMob);
 }
 
@@ -145,7 +145,7 @@ bool MobAI::aggroCheck(Mob *mob, time_t currTime) {
             if (levelDifference > -10)
                 mobRange = levelDifference < 10 ? mobRange - (levelDifference * mobRange / 15) : mobRange / 3;
 
-            if (mob->state != MobState::ROAMING && plr->inCombat) // freshly out of aggro mobs
+            if (mob->state != AIState::ROAMING && plr->inCombat) // freshly out of aggro mobs
                 mobRange = mob->sightRange * 2; // should not be impacted by the above
 
             if (plr->iSpecialState & (CN_SPECIAL_STATE_FLAG__INVISIBLE|CN_SPECIAL_STATE_FLAG__INVULNERABLE))
@@ -267,7 +267,7 @@ static void dealCorruption(Mob *mob, std::vector<int> targetData, int skillID, i
 
         if (plr->HP <= 0) {
             mob->target = nullptr;
-            mob->state = MobState::RETREAT;
+            mob->state = AIState::RETREAT;
             if (!aggroCheck(mob, getTime())) {
                 clearDebuff(mob);
                 if (mob->groupLeader != 0)
@@ -395,7 +395,7 @@ static void useAbilities(Mob *mob, time_t currTime) {
 
 void MobAI::enterCombat(CNSocket *sock, Mob *mob) {
     mob->target = sock;
-    mob->state = MobState::COMBAT;
+    mob->state = AIState::COMBAT;
     mob->nextMovement = getTime();
     mob->nextAttack = 0;
 
@@ -473,7 +473,7 @@ void Mob::deadStep(time_t currTime) {
     std::cout << "respawning mob " << id << " with HP = " << maxHealth << std::endl;
 
     hp = maxHealth;
-    state = MobState::ROAMING;
+    state = AIState::ROAMING;
 
     // if mob is a group leader/follower, spawn where the group is.
     if (groupLeader != 0) {
@@ -501,7 +501,7 @@ void Mob::combatStep(time_t currTime) {
     // lose aggro if the player lost connection
     if (PlayerManager::players.find(target) == PlayerManager::players.end()) {
         target = nullptr;
-        state = MobState::RETREAT;
+        state = AIState::RETREAT;
         if (!aggroCheck(this, currTime)) {
             clearDebuff(this);
             if (groupLeader != 0)
@@ -516,7 +516,7 @@ void Mob::combatStep(time_t currTime) {
     if (plr->HP <= 0
      || (plr->iSpecialState & CN_SPECIAL_STATE_FLAG__INVULNERABLE)) {
         target = nullptr;
-        state = MobState::RETREAT;
+        state = AIState::RETREAT;
         if (!aggroCheck(this, currTime)) {
             clearDebuff(this);
             if (groupLeader != 0)
@@ -572,7 +572,6 @@ void Mob::combatStep(time_t currTime) {
     }
 
     int distanceToTravel = INT_MAX;
-    int speed = speed;
     // movement logic: move when out of range but don't move while casting a skill
     if (distance > mobRange && skillStyle == -1) {
         if (nextMovement != 0 && currTime < nextMovement)
@@ -628,7 +627,7 @@ void Mob::combatStep(time_t currTime) {
     distance = hypot(xyDistance, plr->z - roamZ);
     if (distance >= data["m_iCombatRange"]) {
         target = nullptr;
-        state = MobState::RETREAT;
+        state = AIState::RETREAT;
         clearDebuff(this);
         if (groupLeader != 0)
             groupRetreat(this);
@@ -649,7 +648,7 @@ void Mob::roamingStep(time_t currTime) {
      * do so more often than if we waited for nextMovement (which is way too slow).
      * In the case of group leaders, this step will be called by dead mobs, so disable attack.
      */
-    if (state != MobState::DEAD && (nextAttack == 0 || currTime >= nextAttack)) {
+    if (state != AIState::DEAD && (nextAttack == 0 || currTime >= nextAttack)) {
         nextAttack = currTime + 500;
         if (aggroCheck(this, currTime))
             return;
@@ -673,7 +672,6 @@ void Mob::roamingStep(time_t currTime) {
 
     int xStart = spawnX - idleRange/2;
     int yStart = spawnY - idleRange/2;
-    int speed = speed;
 
     // some mobs don't move (and we mustn't divide/modulus by zero)
     if (idleRange == 0 || speed == 0)
@@ -760,7 +758,7 @@ void Mob::retreatStep(time_t currTime) {
     // if we got there
     //if (distance <= mob->data["m_iIdleRange"]) {
     if (distance <= 10) { // retreat back to the spawn point
-        state = MobState::ROAMING;
+        state = AIState::ROAMING;
         hp = maxHealth;
         killedTime = 0;
         nextAttack = 0;
@@ -773,35 +771,5 @@ void Mob::retreatStep(time_t currTime) {
                 pwr.handle(id, targetData, 110, Abilities::SkillTable[110].durationTime[0], Abilities::SkillTable[110].powerIntensity[0]);
         // clear outlying debuffs
         clearDebuff(this);
-    }
-}
-
-void Mob::step(time_t currTime) {
-    assert(kind == EntityType::MOB);
-
-    if (playersInView < 0)
-        std::cout << "[WARN] Weird playerview value " << playersInView << std::endl;
-
-    // skip mob movement and combat if disabled or not in view
-    if ((!simulateMobs || playersInView == 0) && state != MobState::DEAD
-    && state != MobState::RETREAT)
-        return;
-
-    switch (state) {
-    case MobState::INACTIVE:
-        // no-op
-        break;
-    case MobState::ROAMING:
-        roamingStep(currTime);
-        break;
-    case MobState::COMBAT:
-        combatStep(currTime);
-        break;
-    case MobState::RETREAT:
-        retreatStep(currTime);
-        break;
-    case MobState::DEAD:
-        deadStep(currTime);
-        break;
     }
 }

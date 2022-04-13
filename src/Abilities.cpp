@@ -153,7 +153,7 @@ bool doDebuff(CNSocket *sock, sSkillResult_Buff *respdata, int i, int32_t target
     respdata[i].eCT = 4;
     respdata[i].iID = mob->id;
     respdata[i].bProtected = 1;
-    if (mob->skillStyle < 0 && mob->state != MobState::RETREAT 
+    if (mob->skillStyle < 0 && mob->state != AIState::RETREAT
     && !(mob->cbf & CSB_BIT_FREEDOM)) { // only debuff if the enemy is not retreating, casting corruption or in freedom
         mob->cbf |= bitFlag;
         mob->unbuffTimes[bitFlag] = getTime() + duration * 100;
@@ -227,7 +227,7 @@ bool doDamageNDebuff(CNSocket *sock, sSkillResult_Damage_N_Debuff *respdata, int
     respdata[i].iID = mob->id;
     respdata[i].iHP = mob->hp;
     respdata[i].bProtected = 1;
-    if (mob->skillStyle < 0 && mob->state != MobState::RETREAT 
+    if (mob->skillStyle < 0 && mob->state != AIState::RETREAT
     && !(mob->cbf & CSB_BIT_FREEDOM)) { // only debuff if the enemy is not retreating, casting corruption or in freedom
         mob->cbf |= bitFlag;
         mob->unbuffTimes[bitFlag] = getTime() + duration * 100;
@@ -450,7 +450,7 @@ bool doDamageNDebuff(Mob* mob, sSkillResult_Damage_N_Debuff* respdata, int i, in
 
     if (plr->HP <= 0) {
         mob->target = nullptr;
-        mob->state = MobState::RETREAT;
+        mob->state = AIState::RETREAT;
         if (!MobAI::aggroCheck(mob, getTime())) {
             MobAI::clearDebuff(mob);
             if (mob->groupLeader != 0)
@@ -530,7 +530,7 @@ bool doDamage(Mob* mob, sSkillResult_Damage* respdata, int i, int32_t targetID, 
 
     if (plr->HP <= 0) {
         mob->target = nullptr;
-        mob->state = MobState::RETREAT;
+        mob->state = AIState::RETREAT;
         if (!MobAI::aggroCheck(mob, getTime())) {
             MobAI::clearDebuff(mob);
             if (mob->groupLeader != 0)
@@ -588,7 +588,7 @@ bool doLeech(Mob* mob, sSkillResult_Heal_HP* healdata, int i, int32_t targetID, 
 
     if (plr->HP <= 0) {
         mob->target = nullptr;
-        mob->state = MobState::RETREAT;
+        mob->state = AIState::RETREAT;
         if (!MobAI::aggroCheck(mob, getTime())) {
             MobAI::clearDebuff(mob);
             if (mob->groupLeader != 0)

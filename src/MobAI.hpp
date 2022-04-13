@@ -2,19 +2,10 @@
 
 #include "core/Core.hpp"
 #include "NPCManager.hpp"
-
-enum class MobState {
-    INACTIVE,
-    ROAMING,
-    COMBAT,
-    RETREAT,
-    DEAD
-};
+#include "Entities.hpp"
 
 struct Mob : public CombatNPC {
     // general
-    MobState state = MobState::INACTIVE;
-
     std::unordered_map<int32_t,time_t> unbuffTimes = {};
 
     // dead
@@ -42,16 +33,13 @@ struct Mob : public CombatNPC {
     int offsetX = 0, offsetY = 0;
     int groupMember[4] = {};
 
-    // for optimizing away AI in empty chunks
-    int playersInView = 0;
-
     // temporary; until we're sure what's what
     nlohmann::json data = {};
 
     Mob(int x, int y, int z, int angle, uint64_t iID, int t, nlohmann::json d, int32_t id)
         : CombatNPC(x, y, z, angle, iID, t, id, d["m_iHP"]),
           sightRange(d["m_iSightRange"]) {
-        state = MobState::ROAMING;
+        state = AIState::ROAMING;
 
         data = d;
 
@@ -83,13 +71,10 @@ struct Mob : public CombatNPC {
 
     ~Mob() {}
 
-    virtual void step(time_t currTime) override;
-
-    // we may or may not want these to be generalized to all CombatNPCs later
-    void roamingStep(time_t currTime);
-    void combatStep(time_t currTime);
-    void retreatStep(time_t currTime);
-    void deadStep(time_t currTime);
+    virtual void roamingStep(time_t currTime) override;
+    virtual void combatStep(time_t currTime) override;
+    virtual void retreatStep(time_t currTime) override;
+    virtual void deadStep(time_t currTime) override;
 
     auto operator[](std::string s) {
         return data[s];

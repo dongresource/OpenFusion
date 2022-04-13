@@ -50,14 +50,14 @@ int CombatNPC::takeDamage(EntityRef src, int amt) {
     Mob* mob = (Mob*)this;
 
     // cannot kill mobs multiple times; cannot harm retreating mobs
-    if (mob->state != MobState::ROAMING && mob->state != MobState::COMBAT) {
+    if (mob->state != AIState::ROAMING && mob->state != AIState::COMBAT) {
         return 0; // no damage
     }
 
     if (mob->skillStyle >= 0)
         return 0; // don't hurt a mob casting corruption
 
-    if (mob->state == MobState::ROAMING) {
+    if (mob->state == AIState::ROAMING) {
         assert(mob->target == nullptr && src.type == EntityType::PLAYER); // players only for now
         MobAI::enterCombat(src.sock, mob);
 
@@ -101,7 +101,31 @@ int32_t CombatNPC::getID() {
 }
 
 void CombatNPC::step(time_t currTime) {
-    // stubbed
+    if (playersInView < 0)
+        std::cout << "[WARN] Weird playerview value " << playersInView << std::endl;
+
+    // skip movement and combat if disabled or not in view
+    if ((!MobAI::simulateMobs || playersInView == 0) && state != AIState::DEAD
+        && state != AIState::RETREAT)
+        return;
+
+    switch (state) {
+    case AIState::INACTIVE:
+        // no-op
+        break;
+    case AIState::ROAMING:
+        roamingStep(currTime);
+        break;
+    case AIState::COMBAT:
+        combatStep(currTime);
+        break;
+    case AIState::RETREAT:
+        retreatStep(currTime);
+        break;
+    case AIState::DEAD:
+        deadStep(currTime);
+        break;
+    }
 }
 
 static std::pair<int,int> getDamage(int attackPower, int defensePower, bool shouldCrit,
@@ -268,7 +292,7 @@ void Combat::npcAttackPc(Mob *mob, time_t currTime) {
 
     if (plr->HP <= 0) {
         mob->target = nullptr;
-        mob->state = MobState::RETREAT;
+        mob->state = AIState::RETREAT;
         if (!MobAI::aggroCheck(mob, currTime)) {
             MobAI::clearDebuff(mob);
             if (mob->groupLeader != 0)
@@ -302,7 +326,7 @@ static void genQItemRolls(Player *leader, std::map<int, int>& rolls) {
 }
 
 void Combat::killMob(CNSocket *sock, Mob *mob) {
-    mob->state = MobState::DEAD;
+    mob->state = AIState::DEAD;
     mob->target = nullptr;
     mob->cbf = 0;
     mob->skillStyle = -1;
