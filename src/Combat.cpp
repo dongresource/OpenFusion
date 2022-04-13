@@ -128,6 +128,27 @@ void CombatNPC::step(time_t currTime) {
     }
 }
 
+void CombatNPC::transition(AIState newState) {
+    state = newState;
+    switch (newState) {
+    case AIState::INACTIVE:
+        onInactive();
+        break;
+    case AIState::ROAMING:
+        onRoamStart();
+        break;
+    case AIState::COMBAT:
+        onCombatStart();
+        break;
+    case AIState::RETREAT:
+        onRetreat();
+        break;
+    case AIState::DEAD:
+        onDeath();
+        break;
+    }
+}
+
 static std::pair<int,int> getDamage(int attackPower, int defensePower, bool shouldCrit,
                                          bool batteryBoost, int attackerStyle,
                                          int defenderStyle, int difficulty) {
@@ -291,13 +312,7 @@ void Combat::npcAttackPc(Mob *mob, time_t currTime) {
     PlayerManager::sendToViewable(mob->target, respbuf, P_FE2CL_NPC_ATTACK_PCs);
 
     if (plr->HP <= 0) {
-        mob->target = nullptr;
-        mob->state = AIState::RETREAT;
-        if (!MobAI::aggroCheck(mob, currTime)) {
-            MobAI::clearDebuff(mob);
-            if (mob->groupLeader != 0)
-                MobAI::groupRetreat(mob);
-        }
+        mob->transition(AIState::RETREAT);
     }
 }
 

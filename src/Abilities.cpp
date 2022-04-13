@@ -449,13 +449,7 @@ bool doDamageNDebuff(Mob* mob, sSkillResult_Damage_N_Debuff* respdata, int i, in
     respdata[i].iConditionBitFlag = plr->iConditionBitFlag;
 
     if (plr->HP <= 0) {
-        mob->target = nullptr;
-        mob->state = AIState::RETREAT;
-        if (!MobAI::aggroCheck(mob, getTime())) {
-            MobAI::clearDebuff(mob);
-            if (mob->groupLeader != 0)
-                MobAI::groupRetreat(mob);
-        }
+        mob->transition(AIState::RETREAT);
     }
 
     return true;
@@ -529,13 +523,7 @@ bool doDamage(Mob* mob, sSkillResult_Damage* respdata, int i, int32_t targetID, 
     respdata[i].iHP = plr->HP -= damage;
 
     if (plr->HP <= 0) {
-        mob->target = nullptr;
-        mob->state = AIState::RETREAT;
-        if (!MobAI::aggroCheck(mob, getTime())) {
-            MobAI::clearDebuff(mob);
-            if (mob->groupLeader != 0)
-                MobAI::groupRetreat(mob);
-        }
+        mob->transition(AIState::RETREAT);
     }
 
     return true;
@@ -587,13 +575,7 @@ bool doLeech(Mob* mob, sSkillResult_Heal_HP* healdata, int i, int32_t targetID, 
     damagedata->iHP = plr->HP -= damage;
 
     if (plr->HP <= 0) {
-        mob->target = nullptr;
-        mob->state = AIState::RETREAT;
-        if (!MobAI::aggroCheck(mob, getTime())) {
-            MobAI::clearDebuff(mob);
-            if (mob->groupLeader != 0)
-                MobAI::groupRetreat(mob);
-        }
+        mob->transition(AIState::RETREAT);
     }
 
     return true;

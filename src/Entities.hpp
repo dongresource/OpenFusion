@@ -152,10 +152,17 @@ struct CombatNPC : public BaseNPC, public ICombatant {
     virtual int32_t getID() override;
 
     virtual void step(time_t currTime) override;
-    virtual void roamingStep(time_t currTime) {} // no-op by default
+    virtual void roamingStep(time_t currTime) {} // no-ops by default
     virtual void combatStep(time_t currTime) {}
     virtual void retreatStep(time_t currTime) {}
     virtual void deadStep(time_t currTime) {}
+
+    virtual void transition(AIState newState);
+    virtual void onInactive() {} // no-ops by default
+    virtual void onRoamStart() {}
+    virtual void onCombatStart() {}
+    virtual void onRetreat() {}
+    virtual void onDeath() {}
 };
 
 // Mob is in MobAI.hpp, Player is in Player.hpp

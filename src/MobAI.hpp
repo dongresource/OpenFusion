@@ -76,6 +76,12 @@ struct Mob : public CombatNPC {
     virtual void retreatStep(time_t currTime) override;
     virtual void deadStep(time_t currTime) override;
 
+    virtual void onInactive() override;
+    virtual void onRoamStart() override;
+    virtual void onCombatStart() override;
+    virtual void onRetreat() override;
+    virtual void onDeath() override;
+
     auto operator[](std::string s) {
         return data[s];
     }

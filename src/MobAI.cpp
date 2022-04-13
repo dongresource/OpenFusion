@@ -266,13 +266,8 @@ static void dealCorruption(Mob *mob, std::vector<int> targetData, int skillID, i
         respdata[i].iConditionBitFlag = plr->iConditionBitFlag;
 
         if (plr->HP <= 0) {
-            mob->target = nullptr;
-            mob->state = AIState::RETREAT;
-            if (!aggroCheck(mob, getTime())) {
-                clearDebuff(mob);
-                if (mob->groupLeader != 0)
-                    groupRetreat(mob);
-            }
+            if (!MobAI::aggroCheck(mob, getTime()))
+                mob->transition(AIState::RETREAT);
         }
     }
 
@@ -500,13 +495,8 @@ void Mob::combatStep(time_t currTime) {
 
     // lose aggro if the player lost connection
     if (PlayerManager::players.find(target) == PlayerManager::players.end()) {
-        target = nullptr;
-        state = AIState::RETREAT;
-        if (!aggroCheck(this, currTime)) {
-            clearDebuff(this);
-            if (groupLeader != 0)
-                groupRetreat(this);
-        }
+        if (!MobAI::aggroCheck(this, getTime()))
+            transition(AIState::RETREAT);
         return;
     }
 
@@ -515,13 +505,8 @@ void Mob::combatStep(time_t currTime) {
     // lose aggro if the player became invulnerable or died
     if (plr->HP <= 0
      || (plr->iSpecialState & CN_SPECIAL_STATE_FLAG__INVULNERABLE)) {
-        target = nullptr;
-        state = AIState::RETREAT;
-        if (!aggroCheck(this, currTime)) {
-            clearDebuff(this);
-            if (groupLeader != 0)
-                groupRetreat(this);
-        }
+        if (!MobAI::aggroCheck(this, getTime()))
+            transition(AIState::RETREAT);
         return;
     }
 
@@ -626,11 +611,7 @@ void Mob::combatStep(time_t currTime) {
     int xyDistance = hypot(plr->x - roamX, plr->y - roamY);
     distance = hypot(xyDistance, plr->z - roamZ);
     if (distance >= data["m_iCombatRange"]) {
-        target = nullptr;
-        state = AIState::RETREAT;
-        clearDebuff(this);
-        if (groupLeader != 0)
-            groupRetreat(this);
+        transition(AIState::RETREAT);
     }
 }
 
@@ -772,4 +753,27 @@ void Mob::retreatStep(time_t currTime) {
         // clear outlying debuffs
         clearDebuff(this);
     }
+}
+
+void Mob::onInactive() {
+    // stub
+}
+
+void Mob::onRoamStart() {
+    // stub
+}
+
+void Mob::onCombatStart() {
+    // stub
+}
+
+void Mob::onRetreat() {
+    target = nullptr;
+    MobAI::clearDebuff(this);
+    if (groupLeader != 0)
+        MobAI::groupRetreat(this);
+}
+
+void Mob::onDeath() {
+    // stub
 }
