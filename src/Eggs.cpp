@@ -124,7 +124,7 @@ static void eggStep(CNServer* serv, time_t currTime) {
 
     // check dead eggs and eggs in inactive chunks
     for (auto npc : NPCManager::NPCs) {
-        if (npc.second->kind != EntityType::EGG)
+        if (npc.second->kind != EntityKind::EGG)
             continue;
 
         auto egg = (Egg*)npc.second;
@@ -163,7 +163,7 @@ static void eggPickup(CNSocket* sock, CNPacketData* data) {
         return;
     }
     auto egg = (Egg*)eggRef.getEntity();
-    if (egg->kind != EntityType::EGG) {
+    if (egg->kind != EntityKind::EGG) {
         std::cout << "[WARN] Player tried to open something other than an?!" << std::endl;
         return;
     }

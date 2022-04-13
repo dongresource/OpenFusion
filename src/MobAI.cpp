@@ -58,13 +58,13 @@ void MobAI::clearDebuff(Mob *mob) {
 }
 
 void MobAI::followToCombat(Mob *mob) {
-    if (NPCManager::NPCs.find(mob->groupLeader) != NPCManager::NPCs.end() && NPCManager::NPCs[mob->groupLeader]->kind == EntityType::MOB) {
+    if (NPCManager::NPCs.find(mob->groupLeader) != NPCManager::NPCs.end() && NPCManager::NPCs[mob->groupLeader]->kind == EntityKind::MOB) {
         Mob* leadMob = (Mob*)NPCManager::NPCs[mob->groupLeader];
         for (int i = 0; i < 4; i++) {
             if (leadMob->groupMember[i] == 0)
                 break;
 
-            if (NPCManager::NPCs.find(leadMob->groupMember[i]) == NPCManager::NPCs.end() || NPCManager::NPCs[leadMob->groupMember[i]]->kind != EntityType::MOB) {
+            if (NPCManager::NPCs.find(leadMob->groupMember[i]) == NPCManager::NPCs.end() || NPCManager::NPCs[leadMob->groupMember[i]]->kind != EntityKind::MOB) {
                 std::cout << "[WARN] roamingStep: leader can't find a group member!" << std::endl;
                 continue;
             }
@@ -84,7 +84,7 @@ void MobAI::followToCombat(Mob *mob) {
 }
 
 void MobAI::groupRetreat(Mob *mob) {
-    if (NPCManager::NPCs.find(mob->groupLeader) == NPCManager::NPCs.end() || NPCManager::NPCs[mob->groupLeader]->kind != EntityType::MOB)
+    if (NPCManager::NPCs.find(mob->groupLeader) == NPCManager::NPCs.end() || NPCManager::NPCs[mob->groupLeader]->kind != EntityKind::MOB)
         return;
 
     Mob* leadMob = (Mob*)NPCManager::NPCs[mob->groupLeader];
@@ -92,7 +92,7 @@ void MobAI::groupRetreat(Mob *mob) {
         if (leadMob->groupMember[i] == 0)
             break;
 
-        if (NPCManager::NPCs.find(leadMob->groupMember[i]) == NPCManager::NPCs.end() || NPCManager::NPCs[leadMob->groupMember[i]]->kind != EntityType::MOB) {
+        if (NPCManager::NPCs.find(leadMob->groupMember[i]) == NPCManager::NPCs.end() || NPCManager::NPCs[leadMob->groupMember[i]]->kind != EntityKind::MOB) {
             std::cout << "[WARN] roamingStep: leader can't find a group member!" << std::endl;
             continue;
         }
@@ -127,7 +127,7 @@ bool MobAI::aggroCheck(Mob *mob, time_t currTime) {
         Chunk* chunk = *it;
         for (const EntityRef& ref : chunk->entities) {
             // TODO: support targetting other CombatNPCs
-            if (ref.type != EntityType::PLAYER)
+            if (ref.kind != EntityKind::PLAYER)
                 continue;
 
             CNSocket *s = ref.sock;
@@ -304,7 +304,7 @@ static void useAbilities(Mob *mob, time_t currTime) {
             Chunk* chunk = *it;
             for (const EntityRef& ref : chunk->entities) {
                 // TODO: see aggroCheck()
-                if (ref.type != EntityType::PLAYER)
+                if (ref.kind != EntityKind::PLAYER)
                     continue;
 
                 CNSocket *s= ref.sock;
@@ -452,7 +452,7 @@ void Mob::deadStep(time_t currTime) {
 
     // if mob is a group leader/follower, spawn where the group is.
     if (groupLeader != 0) {
-        if (NPCManager::NPCs.find(groupLeader) != NPCManager::NPCs.end() && NPCManager::NPCs[groupLeader]->kind == EntityType::MOB) {
+        if (NPCManager::NPCs.find(groupLeader) != NPCManager::NPCs.end() && NPCManager::NPCs[groupLeader]->kind == EntityKind::MOB) {
             Mob* leaderMob = (Mob*)NPCManager::NPCs[groupLeader];
             x = leaderMob->x + offsetX;
             y = leaderMob->y + offsetY;
@@ -675,7 +675,7 @@ void Mob::roamingStep(time_t currTime) {
             if (groupMember[i] == 0)
                 break;
 
-            if (NPCManager::NPCs.find(groupMember[i]) == NPCManager::NPCs.end() || NPCManager::NPCs[groupMember[i]]->kind != EntityType::MOB) {
+            if (NPCManager::NPCs.find(groupMember[i]) == NPCManager::NPCs.end() || NPCManager::NPCs[groupMember[i]]->kind != EntityKind::MOB) {
                 std::cout << "[WARN] roamingStep: leader can't find a group member!" << std::endl;
                 continue;
             }
@@ -743,7 +743,7 @@ void Mob::onRoamStart() {
 }
 
 void Mob::onCombatStart(EntityRef src) {
-    assert(src.type == EntityType::PLAYER);
+    assert(src.kind == EntityKind::PLAYER);
     target = src.sock;
     nextMovement = getTime();
     nextAttack = 0;
@@ -774,7 +774,7 @@ void Mob::onDeath(EntityRef src) {
     killedTime = getTime(); // XXX: maybe introduce a shard-global time for each step?
 
     // check for the edge case where hitting the mob did not aggro it
-    if (src.type == EntityType::PLAYER && src.isValid()) {
+    if (src.kind == EntityKind::PLAYER && src.isValid()) {
         Player* plr = PlayerManager::getPlayer(src.sock);
 
         Items::DropRoll rolled;

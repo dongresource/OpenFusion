@@ -6,7 +6,7 @@
 #include <stdint.h>
 #include <set>
 
-enum class EntityType : uint8_t {
+enum class EntityKind : uint8_t {
     INVALID,
     PLAYER,
     SIMPLE_NPC,
@@ -27,7 +27,7 @@ enum class AIState {
 class Chunk;
 
 struct Entity {
-    EntityType kind = EntityType::INVALID;
+    EntityKind kind = EntityKind::INVALID;
     int x = 0, y = 0, z = 0;
     uint64_t instanceID = 0;
     ChunkPos chunkPos = {};
@@ -44,7 +44,7 @@ struct Entity {
 };
 
 struct EntityRef {
-    EntityType type;
+    EntityKind kind;
     union {
         CNSocket *sock;
         int32_t id;
@@ -57,10 +57,10 @@ struct EntityRef {
     Entity *getEntity() const;
 
     bool operator==(const EntityRef& other) const {
-        if (type != other.type)
+        if (kind != other.kind)
             return false;
 
-        if (type == EntityType::PLAYER)
+        if (kind == EntityKind::PLAYER)
             return sock == other.sock;
 
         return id == other.id;
@@ -68,21 +68,20 @@ struct EntityRef {
 
     // arbitrary ordering
     bool operator<(const EntityRef& other) const {
-        if (type == other.type) {
-            if (type == EntityType::PLAYER)
+        if (kind == other.kind) {
+            if (kind == EntityKind::PLAYER)
                 return sock < other.sock;
             else
                 return id < other.id;
         }
 
-        return type < other.type;
+        return kind < other.kind;
     }
 };
 
 /*
  * Interfaces
  */
-
 class ICombatant {
 public:
     ICombatant() {}
@@ -173,7 +172,7 @@ struct Egg : public BaseNPC {
     Egg(uint64_t iID, int t, int32_t id, bool summon)
         : BaseNPC(0, iID, t, id) {
         summoned = summon;
-        kind = EntityType::EGG;
+        kind = EntityKind::EGG;
     }
 
     virtual bool isExtant() override { return !dead; }
@@ -185,7 +184,7 @@ struct Egg : public BaseNPC {
 struct Bus : public BaseNPC {
     Bus(int angle, uint64_t iID, int t, int id) :
         BaseNPC(angle, iID, t, id) {
-        kind = EntityType::BUS;
+        kind = EntityKind::BUS;
         loopingPath = true;
     }
 

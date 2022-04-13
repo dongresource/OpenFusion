@@ -60,7 +60,7 @@ struct Mob : public CombatNPC {
         // NOTE: there appear to be discrepancies in the dump
         hp = maxHealth;
 
-        kind = EntityType::MOB;
+        kind = EntityKind::MOB;
     }
 
     // constructor for /summon

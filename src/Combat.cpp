@@ -58,7 +58,7 @@ int CombatNPC::takeDamage(EntityRef src, int amt) {
         return 0; // don't hurt a mob casting corruption
 
     if (mob->state == AIState::ROAMING) {
-        assert(mob->target == nullptr && src.type == EntityType::PLAYER); // players only for now
+        assert(mob->target == nullptr && src.kind == EntityKind::PLAYER); // players only for now
         mob->transition(AIState::COMBAT, src);
 
         if (mob->groupLeader != 0)
@@ -256,7 +256,7 @@ static void pcAttackNpcs(CNSocket *sock, CNPacketData *data) {
 
 
         BaseNPC* npc = NPCManager::NPCs[targets[i]];
-        if (npc->kind != EntityType::MOB) {
+        if (npc->kind != EntityKind::MOB) {
             std::cout << "[WARN] pcAttackNpcs: NPC is not a mob" << std::endl;
             return;
         }
@@ -450,7 +450,7 @@ static void pcAttackChars(CNSocket *sock, CNPacketData *data) {
         return;
     }
 
-    int32_t *pktdata = (int32_t*)((uint8_t*)data->buf + sizeof(sP_CL2FE_REQ_PC_ATTACK_CHARs));
+    sGM_PVPTarget* pktdata = (sGM_PVPTarget*)((uint8_t*)data->buf + sizeof(sP_CL2FE_REQ_PC_ATTACK_CHARs));
 
     if (!validOutVarPacket(sizeof(sP_FE2CL_PC_ATTACK_CHARs_SUCC), pkt->iTargetCnt, sizeof(sAttackResult))) {
         std::cout << "[WARN] bad sP_FE2CL_PC_ATTACK_CHARs_SUCC packet size\n";
@@ -471,7 +471,6 @@ static void pcAttackChars(CNSocket *sock, CNPacketData *data) {
     for (int i = 0; i < pkt->iTargetCnt; i++) {
 
         ICombatant* target = nullptr;
-        sGM_PVPTarget* targdata = (sGM_PVPTarget*)(pktdata + i * 2);
         std::pair<int, int> damage;
 
         if (pkt->iTargetCnt > 1)
@@ -479,10 +478,10 @@ static void pcAttackChars(CNSocket *sock, CNPacketData *data) {
         else
             damage.first = plr->pointDamage;
 
-        if (targdata->eCT == 1) { // eCT == 1; attack player
+        if (pktdata[i].eCT == 1) { // eCT == 1; attack player
 
             for (auto& pair : PlayerManager::players) {
-                if (pair.second->iID == targdata->iID) {
+                if (pair.second->iID == pktdata[i].iID) {
                     target = pair.second;
                     break;
                 }
@@ -498,14 +497,14 @@ static void pcAttackChars(CNSocket *sock, CNPacketData *data) {
 
         } else { // eCT == 4; attack mob
 
-            if (NPCManager::NPCs.find(targdata->iID) == NPCManager::NPCs.end()) {
+            if (NPCManager::NPCs.find(pktdata[i].iID) == NPCManager::NPCs.end()) {
                 // not sure how to best handle this
                 std::cout << "[WARN] pcAttackChars: NPC ID not found" << std::endl;
                 return;
             }
 
-            BaseNPC* npc = NPCManager::NPCs[targdata->iID];
-            if (npc->kind != EntityType::MOB) {
+            BaseNPC* npc = NPCManager::NPCs[pktdata[i].iID];
+            if (npc->kind != EntityKind::MOB) {
                 std::cout << "[WARN] pcAttackChars: NPC is not a mob" << std::endl;
                 return;
             }
@@ -524,7 +523,7 @@ static void pcAttackChars(CNSocket *sock, CNPacketData *data) {
 
         damage.first = target->takeDamage(sock, damage.first);
 
-        respdata[i].eCT = targdata->eCT;
+        respdata[i].eCT = pktdata[i].eCT;
         respdata[i].iID = target->getID();
         respdata[i].iDamage = damage.first;
         respdata[i].iHP = target->getCurrentHP();
@@ -707,7 +706,7 @@ static void projectileHit(CNSocket* sock, CNPacketData* data) {
         }
 
         BaseNPC* npc = NPCManager::NPCs[pktdata[i]];
-        if (npc->kind != EntityType::MOB) {
+        if (npc->kind != EntityKind::MOB) {
             std::cout << "[WARN] projectileHit: NPC is not a mob" << std::endl;
             return;
         }
