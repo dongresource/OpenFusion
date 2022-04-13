@@ -96,5 +96,4 @@ namespace MobAI {
     void clearDebuff(Mob *mob);
     void followToCombat(Mob *mob);
     void groupRetreat(Mob *mob);
-    void enterCombat(CNSocket *sock, Mob *mob);
 }

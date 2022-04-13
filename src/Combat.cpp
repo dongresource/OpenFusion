@@ -59,7 +59,7 @@ int CombatNPC::takeDamage(EntityRef src, int amt) {
 
     if (mob->state == AIState::ROAMING) {
         assert(mob->target == nullptr && src.type == EntityType::PLAYER); // players only for now
-        MobAI::enterCombat(src.sock, mob);
+        mob->transition(AIState::COMBAT, src);
 
         if (mob->groupLeader != 0)
             MobAI::followToCombat(mob);
@@ -138,6 +138,11 @@ void CombatNPC::transition(AIState newState, EntityRef src) {
         onRoamStart();
         break;
     case AIState::COMBAT:
+        /* TODO: fire any triggered events
+        for (NPCEvent& event : NPCManager::NPCEvents)
+            if (event.trigger == ON_COMBAT && event.npcType == type)
+                event.handler(src, this);
+        */
         onCombatStart(src);
         break;
     case AIState::RETREAT:

@@ -73,13 +73,13 @@ void MobAI::followToCombat(Mob *mob) {
             if (followerMob->state != AIState::ROAMING) // only roaming mobs should transition to combat
                 continue;
 
-            enterCombat(mob->target, followerMob);
+            followerMob->transition(AIState::COMBAT, mob->target);
         }
 
         if (leadMob->state != AIState::ROAMING)
             return;
 
-        enterCombat(mob->target, leadMob);
+        leadMob->transition(AIState::COMBAT, mob->target);
     }
 }
 
@@ -168,7 +168,7 @@ bool MobAI::aggroCheck(Mob *mob, time_t currTime) {
 
     if (closest != nullptr) {
         // found closest player. engage.
-        enterCombat(closest, mob);
+        mob->transition(AIState::COMBAT, closest);
 
         if (mob->groupLeader != 0)
             followToCombat(mob);
@@ -388,27 +388,6 @@ static void useAbilities(Mob *mob, time_t currTime) {
     }
 
     return;
-}
-
-void MobAI::enterCombat(CNSocket *sock, Mob *mob) {
-    mob->target = sock;
-    mob->state = AIState::COMBAT;
-    mob->nextMovement = getTime();
-    mob->nextAttack = 0;
-
-    mob->roamX = mob->x;
-    mob->roamY = mob->y;
-    mob->roamZ = mob->z;
-
-    int skillID = (int)mob->data["m_iPassiveBuff"]; // cast passive
-    std::vector<int> targetData = {1, mob->id, 0, 0, 0};
-    for (auto& pwr : Abilities::Powers)
-        if (pwr.skillType == Abilities::SkillTable[skillID].skillType)
-            pwr.handle(mob->id, targetData, skillID, Abilities::SkillTable[skillID].durationTime[0], Abilities::SkillTable[skillID].powerIntensity[0]);
-
-    for (NPCEvent& event : NPCManager::NPCEvents) // trigger an ON_COMBAT
-        if (event.trigger == ON_COMBAT && event.npcType == mob->type)
-            event.handler(sock, mob);
 }
 
 static void drainMobHP(Mob *mob, int amount) {
@@ -758,7 +737,7 @@ void Mob::retreatStep(time_t currTime) {
 }
 
 void Mob::onInactive() {
-    // stub
+    // no-op
 }
 
 void Mob::onRoamStart() {
@@ -766,7 +745,20 @@ void Mob::onRoamStart() {
 }
 
 void Mob::onCombatStart(EntityRef src) {
-    // stub
+    assert(src.type == EntityType::PLAYER);
+    target = src.sock;
+    nextMovement = getTime();
+    nextAttack = 0;
+
+    roamX = x;
+    roamY = y;
+    roamZ = z;
+
+    int skillID = (int)data["m_iPassiveBuff"]; // cast passive
+    std::vector<int> targetData = { 1, id, 0, 0, 0 };
+    for (auto& pwr : Abilities::Powers)
+        if (pwr.skillType == Abilities::SkillTable[skillID].skillType)
+            pwr.handle(id, targetData, skillID, Abilities::SkillTable[skillID].durationTime[0], Abilities::SkillTable[skillID].powerIntensity[0]);
 }
 
 void Mob::onRetreat() {
