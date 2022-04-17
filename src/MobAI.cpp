@@ -293,10 +293,11 @@ static void dealCorruption(Mob *mob, std::vector<int> targetData, int skillID, i
             if (plr->Nanos[plr->activeNano].iStamina > 150)
                 respdata[i].iNanoStamina = plr->Nanos[plr->activeNano].iStamina = 150;
             // fire damage power disguised as a corruption attack back at the enemy
-            std::vector<int> targetData2 = {1, mob->id, 0, 0, 0};
+            // TODO ABILITIES
+            /*std::vector<int> targetData2 = {1, mob->id, 0, 0, 0};
             for (auto& pwr : Abilities::Powers)
                 if (pwr.skillType == EST_DAMAGE)
-                    pwr.handle(sock, targetData2, plr->activeNano, skillID, 0, 200);
+                    pwr.handle(sock, targetData2, plr->activeNano, skillID, 0, 200);*/
         } else {
             respdata[i].iHitFlag = HF_BIT_STYLE_LOSE;
             respdata[i].iDamage = Abilities::SkillTable[skillID].powerIntensity[0] * PC_MAXHEALTH((int)mob->data["m_iNpcLevel"]) / 1500;
@@ -369,9 +370,10 @@ static void useAbilities(Mob *mob, time_t currTime) {
             }
         }
 
-        for (auto& pwr : Abilities::Powers)
+        // TODO ABILITIES
+        /*for (auto& pwr : Abilities::Powers)
             if (pwr.skillType == Abilities::SkillTable[skillID].skillType)
-                pwr.handle(mob->id, targetData, skillID, Abilities::SkillTable[skillID].durationTime[0], Abilities::SkillTable[skillID].powerIntensity[0]);
+                pwr.handle(mob->id, targetData, skillID, Abilities::SkillTable[skillID].durationTime[0], Abilities::SkillTable[skillID].powerIntensity[0]);*/
         mob->skillStyle = -3; // eruption cooldown
         mob->nextAttack = currTime + 1000;
         return;
@@ -389,13 +391,14 @@ static void useAbilities(Mob *mob, time_t currTime) {
 
     if (random < prob1) { // active skill hit
         int skillID = (int)mob->data["m_iActiveSkill1"];
-        std::vector<int> targetData = {1, plr->iID, 0, 0, 0};
-        for (auto& pwr : Abilities::Powers)
-            if (pwr.skillType == Abilities::SkillTable[skillID].skillType) {
-                if (pwr.bitFlag != 0 && (plr->iConditionBitFlag & pwr.bitFlag))
-                    return; // prevent debuffing a player twice
-                pwr.handle(mob->id, targetData, skillID, Abilities::SkillTable[skillID].durationTime[0], Abilities::SkillTable[skillID].powerIntensity[0]);
-            }
+        // TODO ABILITIES
+        //std::vector<int> targetData = {1, plr->iID, 0, 0, 0};
+        //for (auto& pwr : Abilities::Powers)
+        //    if (pwr.skillType == Abilities::SkillTable[skillID].skillType) {
+        //        if (pwr.bitFlag != 0 && (plr->iConditionBitFlag & pwr.bitFlag))
+        //            return; // prevent debuffing a player twice
+        //        pwr.handle(mob->id, targetData, skillID, Abilities::SkillTable[skillID].durationTime[0], Abilities::SkillTable[skillID].powerIntensity[0]);
+        //    }
         mob->nextAttack = currTime + (int)mob->data["m_iDelayTime"] * 100;
         return;
     }
@@ -785,10 +788,11 @@ void MobAI::onRoamStart(CombatNPC* npc, EntityRef src) {
     self->cbf = 0;
 
     // cast a return home heal spell, this is the right way(tm)
-    std::vector<int> targetData = { 1, 0, 0, 0, 0 };
+    // TODO ABILITIES
+    /*std::vector<int> targetData = { 1, 0, 0, 0, 0 };
     for (auto& pwr : Abilities::Powers)
         if (pwr.skillType == Abilities::SkillTable[110].skillType)
-            pwr.handle(self->id, targetData, 110, Abilities::SkillTable[110].durationTime[0], Abilities::SkillTable[110].powerIntensity[0]);
+            pwr.handle(self->id, targetData, 110, Abilities::SkillTable[110].durationTime[0], Abilities::SkillTable[110].powerIntensity[0]);*/
     // clear outlying debuffs
     clearDebuff(self);
 }
@@ -806,10 +810,11 @@ void MobAI::onCombatStart(CombatNPC* npc, EntityRef src) {
     self->roamZ = self->z;
 
     int skillID = (int)self->data["m_iPassiveBuff"]; // cast passive
-    std::vector<int> targetData = { 1, self->id, 0, 0, 0 };
+    // TODO ABILITIES
+    /*std::vector<int> targetData = { 1, self->id, 0, 0, 0 };
     for (auto& pwr : Abilities::Powers)
         if (pwr.skillType == Abilities::SkillTable[skillID].skillType)
-            pwr.handle(self->id, targetData, skillID, Abilities::SkillTable[skillID].durationTime[0], Abilities::SkillTable[skillID].powerIntensity[0]);
+            pwr.handle(self->id, targetData, skillID, Abilities::SkillTable[skillID].durationTime[0], Abilities::SkillTable[skillID].powerIntensity[0]);*/
 }
 
 void MobAI::onRetreat(CombatNPC* npc, EntityRef src) {
