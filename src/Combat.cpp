@@ -44,41 +44,8 @@ void Player::step(time_t currTime) {
 
 int CombatNPC::takeDamage(EntityRef src, int amt) {
 
-    /* REFACTOR: all of this logic is strongly coupled to mobs.
-     * come back to this when more of it is moved to CombatNPC.
-     * remove this cast when done */
-    Mob* mob = (Mob*)this;
-
-    // cannot kill mobs multiple times; cannot harm retreating mobs
-    if (mob->state != AIState::ROAMING && mob->state != AIState::COMBAT) {
-        return 0; // no damage
-    }
-
-    if (mob->skillStyle >= 0)
-        return 0; // don't hurt a mob casting corruption
-
-    if (mob->state == AIState::ROAMING) {
-        assert(mob->target == nullptr && src.kind == EntityKind::PLAYER); // players only for now
-        mob->transition(AIState::COMBAT, src);
-
-        if (mob->groupLeader != 0)
-            MobAI::followToCombat(mob);
-    }
-
     hp -= amt;
-
-    // wake up sleeping monster
-    if (mob->cbf & CSB_BIT_MEZ) {
-        mob->cbf &= ~CSB_BIT_MEZ;
-
-        INITSTRUCT(sP_FE2CL_CHAR_TIME_BUFF_TIME_OUT, pkt1);
-        pkt1.eCT = 2;
-        pkt1.iID = mob->id;
-        pkt1.iConditionBitFlag = mob->cbf;
-        NPCManager::sendToViewable(mob, &pkt1, P_FE2CL_CHAR_TIME_BUFF_TIME_OUT, sizeof(sP_FE2CL_CHAR_TIME_BUFF_TIME_OUT));
-    }
-
-    if (mob->hp <= 0)
+    if (hp <= 0)
         transition(AIState::DEAD, src);
 
     return amt;

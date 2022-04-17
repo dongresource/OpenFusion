@@ -96,6 +96,7 @@ struct Mob : public CombatNPC {
 
     ~Mob() {}
 
+    virtual int takeDamage(EntityRef src, int amt) override;
     virtual void step(time_t currTime) override;
 
     auto operator[](std::string s) {

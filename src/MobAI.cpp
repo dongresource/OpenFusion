@@ -16,6 +16,52 @@ using namespace MobAI;
 
 bool MobAI::simulateMobs = settings::SIMULATEMOBS;
 
+void Mob::step(time_t currTime) {
+    if (playersInView < 0)
+        std::cout << "[WARN] Weird playerview value " << playersInView << std::endl;
+
+    // skip movement and combat if disabled or not in view
+    if ((!MobAI::simulateMobs || playersInView == 0) && state != AIState::DEAD
+        && state != AIState::RETREAT)
+        return;
+
+    // call superclass step
+    CombatNPC::step(currTime);
+}
+
+int Mob::takeDamage(EntityRef src, int amt) {
+
+    // cannot kill mobs multiple times; cannot harm retreating mobs
+    if (state != AIState::ROAMING && state != AIState::COMBAT) {
+        return 0; // no damage
+    }
+
+    if (skillStyle >= 0)
+        return 0; // don't hurt a mob casting corruption
+
+    if (state == AIState::ROAMING) {
+        assert(target == nullptr && src.kind == EntityKind::PLAYER); // TODO: players only for now
+        transition(AIState::COMBAT, src);
+
+        if (groupLeader != 0)
+            MobAI::followToCombat(this);
+    }
+
+    // wake up sleeping monster
+    if (cbf & CSB_BIT_MEZ) {
+        cbf &= ~CSB_BIT_MEZ;
+
+        INITSTRUCT(sP_FE2CL_CHAR_TIME_BUFF_TIME_OUT, pkt1);
+        pkt1.eCT = 2;
+        pkt1.iID = id;
+        pkt1.iConditionBitFlag = cbf;
+        NPCManager::sendToViewable(this, &pkt1, P_FE2CL_CHAR_TIME_BUFF_TIME_OUT, sizeof(sP_FE2CL_CHAR_TIME_BUFF_TIME_OUT));
+    }
+
+    // call superclass takeDamage
+    return CombatNPC::takeDamage(src, amt);
+}
+
 /*
  * Dynamic lerp; distinct from Transport::lerp(). This one doesn't care about height and
  * only returns the first step, since the rest will need to be recalculated anyway if chasing player.
@@ -421,19 +467,6 @@ void MobAI::incNextMovement(Mob* mob, time_t currTime) {
 
     int delay = (int)mob->data["m_iDelayTime"] * 1000;
     mob->nextMovement = currTime + delay / 2 + Rand::rand(delay / 2);
-}
-
-void Mob::step(time_t currTime) {
-    if (playersInView < 0)
-        std::cout << "[WARN] Weird playerview value " << playersInView << std::endl;
-
-    // skip movement and combat if disabled or not in view
-    if ((!MobAI::simulateMobs || playersInView == 0) && state != AIState::DEAD
-        && state != AIState::RETREAT)
-        return;
-
-    // call superclass step
-    CombatNPC::step(currTime);
 }
 
 void MobAI::deadStep(CombatNPC* npc, time_t currTime) {
