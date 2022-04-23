@@ -843,21 +843,17 @@ void MobAI::onDeath(CombatNPC* npc, EntityRef src) {
         Items::DropRoll eventRolled;
         std::map<int, int> qitemRolls;
 
-        Player* leader = PlayerManager::getPlayerFromID(plr->iIDGroup);
-        assert(leader != nullptr); // should never happen
-
-        Combat::genQItemRolls(leader, qitemRolls);
-
-        if (plr->groupCnt == 1 && plr->iIDGroup == plr->iID) {
+        if (plr->group == nullptr) {
+            Combat::genQItemRolls(plr, qitemRolls);
             Items::giveMobDrop(src.sock, self, rolled, eventRolled);
             Missions::mobKilled(src.sock, self->type, qitemRolls);
         }
         else {
-            for (int i = 0; i < leader->groupCnt; i++) {
-                CNSocket* sockTo = PlayerManager::getSockFromID(leader->groupIDs[i]);
-                if (sockTo == nullptr)
-                    continue;
-
+            auto players = (*plr->group)[EntityKind::PLAYER];
+            Player* leader = PlayerManager::getPlayer(players[0].sock);
+            Combat::genQItemRolls(leader, qitemRolls);
+            for (int i = 0; i < players.size(); i++) {
+                CNSocket* sockTo = players[i].sock;
                 Player* otherPlr = PlayerManager::getPlayer(sockTo);
 
                 // only contribute to group members' kills if they're close enough

@@ -269,11 +269,10 @@ void Combat::npcAttackPc(Mob *mob, time_t currTime) {
  * set of rolls.
  */
 void Combat::genQItemRolls(Player *leader, std::map<int, int>& rolls) {
-    for (int i = 0; i < leader->groupCnt; i++) {
-        if (leader->groupIDs[i] == 0)
-            continue;
+    auto players = (*leader->group)[EntityKind::PLAYER];
+    for (int i = 0; i < players.size(); i++) {
 
-        CNSocket *otherSock = PlayerManager::getSockFromID(leader->groupIDs[i]);
+        CNSocket *otherSock = players[i].sock;
         if (otherSock == nullptr)
             continue;
 
@@ -679,7 +678,7 @@ static void playerTick(CNServer *serv, time_t currTime) {
         bool transmit = false;
 
         // group ticks
-        if (plr->groupCnt > 1)
+        if (plr->group != nullptr)
             Groups::groupTickInfo(plr);
 
         // do not tick dead players
