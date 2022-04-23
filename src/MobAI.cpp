@@ -842,16 +842,18 @@ void MobAI::onDeath(CombatNPC* npc, EntityRef src) {
         Items::DropRoll rolled;
         Items::DropRoll eventRolled;
         std::map<int, int> qitemRolls;
+        std::vector<Player*> playerRefs;
 
         if (plr->group == nullptr) {
-            Combat::genQItemRolls(plr, qitemRolls);
+            playerRefs.push_back(plr);
+            Combat::genQItemRolls(playerRefs, qitemRolls);
             Items::giveMobDrop(src.sock, self, rolled, eventRolled);
             Missions::mobKilled(src.sock, self->type, qitemRolls);
         }
         else {
             auto players = (*plr->group)[EntityKind::PLAYER];
-            Player* leader = PlayerManager::getPlayer(players[0].sock);
-            Combat::genQItemRolls(leader, qitemRolls);
+            for (EntityRef pRef : players) playerRefs.push_back(PlayerManager::getPlayer(pRef.sock));
+            Combat::genQItemRolls(playerRefs, qitemRolls);
             for (int i = 0; i < players.size(); i++) {
                 CNSocket* sockTo = players[i].sock;
                 Player* otherPlr = PlayerManager::getPlayer(sockTo);

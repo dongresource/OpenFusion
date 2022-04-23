@@ -41,7 +41,8 @@ void PlayerManager::removePlayer(CNSocket* key) {
     Player* plr = getPlayer(key);
     uint64_t fromInstance = plr->instanceID;
 
-    Groups::groupKick(plr);
+    if(plr->group != nullptr)
+        Groups::groupKick(plr);
 
     // remove player's bullets
     Combat::Bullets.erase(plr->iID);

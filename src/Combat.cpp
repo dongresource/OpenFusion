@@ -268,16 +268,10 @@ void Combat::npcAttackPc(Mob *mob, time_t currTime) {
  * single RNG roll per mission task, and every group member shares that same
  * set of rolls.
  */
-void Combat::genQItemRolls(Player *leader, std::map<int, int>& rolls) {
-    auto players = (*leader->group)[EntityKind::PLAYER];
+void Combat::genQItemRolls(std::vector<Player*> players, std::map<int, int>& rolls) {
     for (int i = 0; i < players.size(); i++) {
 
-        CNSocket *otherSock = players[i].sock;
-        if (otherSock == nullptr)
-            continue;
-
-        Player *member = PlayerManager::getPlayer(otherSock);
-
+        Player* member = players[i];
         for (int j = 0; j < ACTIVE_MISSION_COUNT; j++)
             if (member->tasks[j] != 0)
                 rolls[member->tasks[j]] = Rand::rand();
