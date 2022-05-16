@@ -86,7 +86,7 @@ void Nanos::summonNano(CNSocket *sock, int slot, bool silent) {
     int16_t skillID = plr->Nanos[plr->activeNano].iSkillID;
 
     // passive nano unbuffing
-    if (Abilities::SkillTable[skillID].drainType == 2) {
+    if (Abilities::SkillTable[skillID].batteryDrainType == 2) {
         // TODO ABILITIES
         /*std::vector<int> targetData = Abilities::findTargets(plr, skillID);
 
@@ -102,7 +102,7 @@ void Nanos::summonNano(CNSocket *sock, int slot, bool silent) {
     skillID = plr->Nanos[nanoID].iSkillID;
 
     // passive nano buffing
-    if (Abilities::SkillTable[skillID].drainType == 2) {
+    if (Abilities::SkillTable[skillID].batteryDrainType == 2) {
         int boost = 0;
         if (getNanoBoost(plr))
             boost = 1;

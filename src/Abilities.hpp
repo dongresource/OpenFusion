@@ -5,14 +5,21 @@
 
 struct SkillData {
     int skillType;
+    int effectTarget;
+    int effectType;
     int targetType;
-    int drainType;
+    int batteryDrainType;
     int effectArea;
+
     int batteryUse[4];
     int durationTime[4];
-    int powerIntensity[4];
+
+    int valueTypes[3];
+    int values[3][4];
 };
 
 namespace Abilities {
     extern std::map<int32_t, SkillData> SkillTable;
+
+    void init();
 }

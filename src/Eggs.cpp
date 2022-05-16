@@ -41,7 +41,7 @@ int Eggs::eggBuffPlayer(CNSocket* sock, int skillId, int eggId, int duration) {
         memset(respbuf, 0, resplen);
         skill->eCT = 1;
         skill->iID = plr->iID;
-        skill->iDamage = PC_MAXHEALTH(plr->level) * Abilities::SkillTable[skillId].powerIntensity[0] / 1000;
+        skill->iDamage = PC_MAXHEALTH(plr->level) * Abilities::SkillTable[skillId].values[0][0] / 1000;
         plr->HP -= skill->iDamage;
         if (plr->HP < 0)
             plr->HP = 0;
@@ -51,7 +51,7 @@ int Eggs::eggBuffPlayer(CNSocket* sock, int skillId, int eggId, int duration) {
         memset(respbuf, 0, resplen);
         skill->eCT = 1;
         skill->iID = plr->iID;
-        skill->iHealHP = PC_MAXHEALTH(plr->level) * Abilities::SkillTable[skillId].powerIntensity[0] / 1000;
+        skill->iHealHP = PC_MAXHEALTH(plr->level) * Abilities::SkillTable[skillId].values[0][0] / 1000;
         plr->HP += skill->iHealHP;
         if (plr->HP > PC_MAXHEALTH(plr->level))
             plr->HP = PC_MAXHEALTH(plr->level);
