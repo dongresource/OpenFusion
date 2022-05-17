@@ -17,6 +17,35 @@ static void emailUpdateCheck(CNSocket* sock, CNPacketData* data) {
 }
 */
 
+std::vector<EntityRef> Abilities::matchTargets(SkillData *skill, int count, int32_t *ids) {
+    
+    std::vector<int> tempTargs;
+    switch (skill->effectTarget)
+    {
+    case SkillEffectTarget::POINT:
+        std::cout << "[SKILL] POINT; ";
+        break;
+    case SkillEffectTarget::SELF:
+        std::cout << "[SKILL] SELF; ";
+        break;
+    case SkillEffectTarget::CONE:
+        std::cout << "[SKILL] CONE; ";
+        break;
+    case SkillEffectTarget::AREA_SELF:
+        std::cout << "[SKILL] AREA_SELF; ";
+        break;
+    case SkillEffectTarget::AREA_TARGET:
+        std::cout << "[SKILL] AREA_TARGET; ";
+        break;
+    }
+
+    for (int i = 0; i < count; i++) std::cout << ids[i] << " ";
+    std::cout << std::endl;
+
+    std::vector<EntityRef> targets;
+    return targets;
+}
+
 void Abilities::init() {
-	//REGISTER_SHARD_PACKET(P_CL2FE_REQ_PC_EMAIL_UPDATE_CHECK, emailUpdateCheck);
+    //REGISTER_SHARD_PACKET(P_CL2FE_REQ_PC_EMAIL_UPDATE_CHECK, emailUpdateCheck);
 }
