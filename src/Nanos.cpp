@@ -85,15 +85,16 @@ void Nanos::summonNano(CNSocket *sock, int slot, bool silent) {
     plr->nanoDrainRate = 0;
     int16_t skillID = plr->Nanos[plr->activeNano].iSkillID;
     SkillData* skillData = &Abilities::SkillTable[skillID];
+    std::vector<EntityRef> targetData;
 
     // passive nano unbuffing
     if (skillData->batteryDrainType == 2) {
-        // TODO ABILITIES
-        std::vector<EntityRef> targetData = Abilities::matchTargets(skillData, 0, nullptr);
+        targetData.push_back(sock); // self
+        if (skillData->targetType == SkillTargetType::GROUP && plr->group != nullptr)
+            targetData = plr->group->members; // whole group
 
-        /*for (auto& pwr : Abilities::Powers)
-            if (pwr.skillType == Abilities::SkillTable[skillID].skillType)
-                Abilities::removeBuff(sock, targetData, pwr.bitFlag, pwr.timeBuffID, 0,(Abilities::SkillTable[skillID].targetType == 3));*/
+        /* TODO ABILITIES */
+        targetData.clear();
     }
 
     if (nanoID >= NANO_COUNT || nanoID < 0)
@@ -101,12 +102,17 @@ void Nanos::summonNano(CNSocket *sock, int slot, bool silent) {
 
     plr->activeNano = nanoID;
     skillID = plr->Nanos[nanoID].iSkillID;
+    skillData = &Abilities::SkillTable[skillID];
 
     // passive nano buffing
-    if (Abilities::SkillTable[skillID].batteryDrainType == 2) {
+    if (skillData->batteryDrainType == 2) {
         int boost = 0;
         if (getNanoBoost(plr))
             boost = 1;
+
+        targetData.push_back(sock); // self
+        if (skillData->targetType == SkillTargetType::GROUP && plr->group != nullptr)
+            targetData = plr->group->members; // whole group
 
         // TODO ABILITIES
         //std::vector<int> targetData = Abilities::findTargets(plr, skillID);

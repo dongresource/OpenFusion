@@ -17,33 +17,35 @@ static void emailUpdateCheck(CNSocket* sock, CNPacketData* data) {
 }
 */
 
-std::vector<EntityRef> Abilities::matchTargets(SkillData *skill, int count, int32_t *ids) {
-    
-    std::vector<int> tempTargs;
-    switch (skill->effectTarget)
-    {
-    case SkillEffectTarget::POINT:
-        std::cout << "[SKILL] POINT; ";
-        break;
-    case SkillEffectTarget::SELF:
-        std::cout << "[SKILL] SELF; ";
-        break;
-    case SkillEffectTarget::CONE:
-        std::cout << "[SKILL] CONE; ";
-        break;
-    case SkillEffectTarget::AREA_SELF:
-        std::cout << "[SKILL] AREA_SELF; ";
-        break;
-    case SkillEffectTarget::AREA_TARGET:
-        std::cout << "[SKILL] AREA_TARGET; ";
-        break;
-    }
-
-    for (int i = 0; i < count; i++) std::cout << ids[i] << " ";
-    std::cout << std::endl;
+std::vector<EntityRef> Abilities::matchTargets(SkillData* skill, int count, int32_t *ids) {
 
     std::vector<EntityRef> targets;
-    return targets;
+
+    for (int i = 0; i < count; i++) {
+        int32_t id = ids[i];
+        if (skill->targetType == SkillTargetType::MOBS) {
+            // mob?
+            if (NPCManager::NPCs.find(id) != NPCManager::NPCs.end()) targets.push_back(id);
+            else std::cout << "[WARN] skill: id not found\n";
+        } else {
+            // player?
+            CNSocket* sock = PlayerManager::getSockFromID(id);
+            if (sock != nullptr) targets.push_back(sock);
+            else std::cout << "[WARN] skill: sock not found\n";
+        }
+    }
+
+    return targets; 
+}
+
+void Abilities::useAbility(SkillData* skill, EntityRef src, std::vector<EntityRef> targets) {
+    for (EntityRef target : targets) {
+        Entity* entity = target.getEntity();
+        if (entity->kind != PLAYER && entity->kind != COMBAT_NPC && entity->kind != MOB)
+            continue; // not a combatant
+
+
+    }
 }
 
 void Abilities::init() {

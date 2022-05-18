@@ -14,8 +14,8 @@ enum class SkillEffectTarget {
 
 enum class SkillTargetType {
     MOBS = 1,
-    PLAYERS = 2,
-    SELF = 3 // only used once by client /shrug
+    SELF = 2,
+    GROUP = 3
 };
 
 struct SkillData {
@@ -37,5 +37,7 @@ namespace Abilities {
     extern std::map<int32_t, SkillData> SkillTable;
 
     std::vector<EntityRef> matchTargets(SkillData*, int, int32_t*);
+    void applyAbility(SkillData*, EntityRef, std::vector<EntityRef>);
+
     void init();
 }

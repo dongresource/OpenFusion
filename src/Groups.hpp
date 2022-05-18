@@ -12,7 +12,7 @@ enum EntityKind;
 
 struct Group {
     std::vector<EntityRef> members;
-    int32_t conditionBitFlag;
+    int8_t conditionCounters[32];
 
     std::vector<EntityRef> filter(EntityKind kind) {
         std::vector<EntityRef> filtered;
