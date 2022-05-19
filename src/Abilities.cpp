@@ -38,7 +38,7 @@ std::vector<EntityRef> Abilities::matchTargets(SkillData* skill, int count, int3
     return targets; 
 }
 
-void Abilities::useAbility(SkillData* skill, EntityRef src, std::vector<EntityRef> targets) {
+void Abilities::applyAbility(SkillData* skill, EntityRef src, std::vector<EntityRef> targets) {
     for (EntityRef target : targets) {
         Entity* entity = target.getEntity();
         if (entity->kind != PLAYER && entity->kind != COMBAT_NPC && entity->kind != MOB)

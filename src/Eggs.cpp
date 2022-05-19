@@ -18,7 +18,7 @@ int Eggs::eggBuffPlayer(CNSocket* sock, int skillId, int eggId, int duration) {
     Player* plr = PlayerManager::getPlayer(sock);
 
     // TODO ABILITIES
-    int bitFlag = plr->group->conditionBitFlag;
+    //int bitFlag = plr->group->conditionBitFlag;
     int CBFlag = 0;// Abilities::applyBuff(sock, skillId, 1, 3, bitFlag);
 
     size_t resplen; 
@@ -98,7 +98,7 @@ static void eggStep(CNServer* serv, time_t currTime) {
             int32_t CBFlag = it->first.second;
             Player* plr = PlayerManager::getPlayer(sock);
 
-            int groupFlags = plr->group->conditionBitFlag;
+            //int groupFlags = plr->group->conditionBitFlag;
             // TODO ABILITIES
             //for (auto& pwr : Abilities::Powers) {
             //    if (pwr.bitFlag == CBFlag) { // pick the power with the right flag and unbuff

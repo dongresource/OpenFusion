@@ -18,12 +18,17 @@ enum class SkillTargetType {
     GROUP = 3
 };
 
+enum class SkillDrainType {
+    ACTIVE = 1,
+    PASSIVE = 2
+};
+
 struct SkillData {
     int skillType;
     SkillEffectTarget effectTarget;
     int effectType; // always 1?
     SkillTargetType targetType;
-    int batteryDrainType;
+    SkillDrainType drainType;
     int effectArea;
 
     int batteryUse[4];

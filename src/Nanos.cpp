@@ -82,49 +82,14 @@ void Nanos::summonNano(CNSocket *sock, int slot, bool silent) {
     if (slot != -1 && plr->Nanos[nanoID].iSkillID == 0)
         return; // prevent powerless nanos from summoning
 
-    plr->nanoDrainRate = 0;
-    int16_t skillID = plr->Nanos[plr->activeNano].iSkillID;
-    SkillData* skillData = &Abilities::SkillTable[skillID];
-    std::vector<EntityRef> targetData;
-
-    // passive nano unbuffing
-    if (skillData->batteryDrainType == 2) {
-        targetData.push_back(sock); // self
-        if (skillData->targetType == SkillTargetType::GROUP && plr->group != nullptr)
-            targetData = plr->group->members; // whole group
-
-        /* TODO ABILITIES */
-        targetData.clear();
-    }
-
     if (nanoID >= NANO_COUNT || nanoID < 0)
         return; // sanity check
 
     plr->activeNano = nanoID;
-    skillID = plr->Nanos[nanoID].iSkillID;
-    skillData = &Abilities::SkillTable[skillID];
 
-    // passive nano buffing
-    if (skillData->batteryDrainType == 2) {
-        int boost = 0;
-        if (getNanoBoost(plr))
-            boost = 1;
-
-        targetData.push_back(sock); // self
-        if (skillData->targetType == SkillTargetType::GROUP && plr->group != nullptr)
-            targetData = plr->group->members; // whole group
-
-        // TODO ABILITIES
-        //std::vector<int> targetData = Abilities::findTargets(plr, skillID);
-        //for (auto& pwr : Abilities::Powers) {
-        //    if (pwr.skillType == Abilities::SkillTable[skillID].skillType) {
-        //        resp.eCSTB___Add = 1; // the part that makes nano go ZOOMAZOOM
-        //        plr->nanoDrainRate = Abilities::SkillTable[skillID].batteryUse[boost*3];
-
-        //        pwr.handle(sock, targetData, nanoID, skillID, 0, Abilities::SkillTable[skillID].powerIntensity[boost]);
-        //    }
-        //}
-    }
+    int16_t skillID = plr->Nanos[nanoID].iSkillID;
+    if (Abilities::SkillTable.count(skillID) > 0 && Abilities::SkillTable[skillID].drainType == SkillDrainType::PASSIVE)
+        resp.eCSTB___Add = 1; // passive buff effect
 
     if (!silent) // silent nano death but only for the summoning player
         sock->sendPacket(resp, P_FE2CL_REP_NANO_ACTIVE_SUCC);
