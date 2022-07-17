@@ -64,7 +64,7 @@ int Eggs::eggBuffPlayer(CNSocket* sock, int skillId, int eggId, int duration) {
         memset(respbuf, 0, resplen);
         skill->eCT = 1;
         skill->iID = plr->iID;
-        skill->iConditionBitFlag = plr->iConditionBitFlag;
+        skill->iConditionBitFlag = plr->getCompositeCondition();
     }
 
     skillUse->iNPC_ID = eggId;

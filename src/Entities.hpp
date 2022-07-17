@@ -6,6 +6,10 @@
 #include <set>
 #include <map>
 
+/* forward declaration(s) */
+class Buff;
+struct BuffStack;
+
 enum EntityKind {
     INVALID,
     PLAYER,
@@ -88,6 +92,11 @@ public:
     ICombatant() {}
     virtual ~ICombatant() {}
 
+    virtual void addBuff(BuffStack* buff) = 0;
+    virtual BuffStack* getBuff(int buffId) = 0;
+    virtual void removeBuff(int buffId) = 0;
+    virtual bool hasBuff(int buffId) = 0;
+    virtual int getCompositeCondition() = 0;
     virtual int takeDamage(EntityRef, int) = 0;
     virtual void heal(EntityRef, int) = 0;
     virtual bool isAlive() = 0;
@@ -149,6 +158,11 @@ struct CombatNPC : public BaseNPC, public ICombatant {
 
     virtual bool isExtant() override { return hp > 0; }
 
+    virtual void addBuff(BuffStack* buff) override;
+    virtual BuffStack* getBuff(int buffId) override;
+    virtual void removeBuff(int buffId) override;
+    virtual bool hasBuff(int buffId) override;
+    virtual int getCompositeCondition() override;
     virtual int takeDamage(EntityRef src, int amt) override;
     virtual void heal(EntityRef src, int amt) override;
     virtual bool isAlive() override;

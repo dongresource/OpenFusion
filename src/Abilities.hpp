@@ -44,7 +44,7 @@ namespace Abilities {
     extern std::map<int32_t, SkillData> SkillTable;
 
     std::vector<EntityRef> matchTargets(SkillData*, int, int32_t*);
-    void applyAbility(SkillData*, EntityRef, std::vector<EntityRef>);
+    void useAbility(SkillData*, EntityRef, std::vector<EntityRef>);
 
     void init();
 }

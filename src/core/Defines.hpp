@@ -119,6 +119,13 @@ enum {
 };
 
 enum {
+	ETBU_NONE = 0,
+	ETBU_ADD = 1,
+	ETBU_DEL = 2,
+	ETBU_CHANGE = 3
+};
+
+enum {
     SUCC = 1,
     FAIL = 0,
 

@@ -8,13 +8,52 @@
 #include "NPCManager.hpp"
 #include "Nanos.hpp"
 #include "Abilities.hpp"
+#include "Buffs.hpp"
 
 #include <assert.h>
+#include <iostream>
 
 using namespace Combat;
 
 /// Player Id -> Bullet Id -> Bullet
 std::map<int32_t, std::map<int8_t, Bullet>> Combat::Bullets;
+
+void Player::addBuff(BuffStack* buff) {
+    EntityRef self = PlayerManager::getSockFromID(iID);
+    if(!hasBuff(buff->id)) {
+        buffs[buff->id] = new Buff(self, buff);
+    }
+    else buffs[buff->id]->addStack(buff);
+    buff->onApply(self, buff);
+}
+
+BuffStack* Player::getBuff(int buffId) {
+    if(hasBuff(buffId)) {
+        return buffs[buffId]->getDominantBuff();
+    }
+    return nullptr;
+}
+
+void Player::removeBuff(int buffId) {
+    if(hasBuff(buffId)) {
+        buffs[buffId]->onExpire();
+        delete buffs[buffId];
+        buffs.erase(buffId);
+    }
+}
+
+bool Player::hasBuff(int buffId) {
+    return buffs.find(buffId) != buffs.end();
+}
+
+int Player::getCompositeCondition() {
+    int conditionBitFlag = 0;
+    for(auto buffEntry : buffs) {
+        if(!buffEntry.second->isStale())
+            conditionBitFlag |= CSB_FROM_ECSB(buffEntry.first);
+    }
+    return conditionBitFlag;
+}
 
 int Player::takeDamage(EntityRef src, int amt) {
     HP -= amt;
@@ -39,6 +78,22 @@ int32_t Player::getID() {
 
 void Player::step(time_t currTime) {
     // no-op
+}
+
+void CombatNPC::addBuff(BuffStack* buff) { /* stubbed */ }
+
+BuffStack* CombatNPC::getBuff(int buffId) { /* stubbed */
+    return nullptr;
+}
+
+void CombatNPC::removeBuff(int buffId) { /* stubbed */ }
+
+bool CombatNPC::hasBuff(int buffId) { /* stubbed */
+    return false;
+}
+
+int CombatNPC::getCompositeCondition() { /* stubbed */
+    return 0;
 }
 
 int CombatNPC::takeDamage(EntityRef src, int amt) {
@@ -303,17 +358,22 @@ static void dotDamageOnOff(CNSocket *sock, CNPacketData *data) {
     sP_CL2FE_DOT_DAMAGE_ONOFF *pkt = (sP_CL2FE_DOT_DAMAGE_ONOFF*)data->buf;
     Player *plr = PlayerManager::getPlayer(sock);
 
-    if ((plr->iConditionBitFlag & CSB_BIT_INFECTION) != (bool)pkt->iFlag)
-        plr->iConditionBitFlag ^= CSB_BIT_INFECTION;
-
-    INITSTRUCT(sP_FE2CL_PC_BUFF_UPDATE, pkt1);
-
-    pkt1.eCSTB = ECSB_INFECTION; // eCharStatusTimeBuffID
-    pkt1.eTBU = 1; // eTimeBuffUpdate
-    pkt1.eTBT = 0; // eTimeBuffType 1 means nano
-    pkt1.iConditionBitFlag = plr->iConditionBitFlag;
-
-    sock->sendPacket((void*)&pkt1, P_FE2CL_PC_BUFF_UPDATE, sizeof(sP_FE2CL_PC_BUFF_UPDATE));
+    // infection debuff toggles as the client asks it to,
+    // so we add and remove a permanent debuff
+    if (pkt->iFlag && !plr->hasBuff(ECSB_INFECTION)) {
+        BuffStack infection = {
+            ECSB_INFECTION,
+            -1, // infinite
+            sock, // self-inflicted
+            BuffClass::OTHER,
+            Buffs::timeBuffUpdateAdd,
+            nullptr, // client ticks for us! todo anticheat lol
+            Buffs::timeBuffUpdateDelete
+        };
+        plr->addBuff(&infection);
+    } else if(!pkt->iFlag && plr->hasBuff(ECSB_INFECTION)) {
+        plr->removeBuff(ECSB_INFECTION);
+    }
 }
 
 static void dealGooDamage(CNSocket *sock, int amount) {
@@ -327,12 +387,13 @@ static void dealGooDamage(CNSocket *sock, int amount) {
     sP_FE2CL_CHAR_TIME_BUFF_TIME_TICK *pkt = (sP_FE2CL_CHAR_TIME_BUFF_TIME_TICK*)respbuf;
     sSkillResult_DotDamage *dmg = (sSkillResult_DotDamage*)(respbuf + sizeof(sP_FE2CL_CHAR_TIME_BUFF_TIME_TICK));
 
-    if (plr->iConditionBitFlag & CSB_BIT_PROTECT_INFECTION) {
+    BuffStack* protectionBuff = plr->getBuff(ECSB_PROTECT_INFECTION);
+    if (protectionBuff != nullptr) {
         amount = -2; // -2 is the magic number for "Protected" to appear as the damage number
         dmg->bProtected = 1;
 
         // eggs allow protection without nanos
-        if (plr->activeNano != -1 && (plr->iSelfConditionBitFlag & CSB_BIT_PROTECT_INFECTION))
+        if (protectionBuff->buffClass == BuffClass::NANO && plr->activeNano != -1)
             plr->Nanos[plr->activeNano].iStamina -= 3;
     } else {
         plr->HP -= amount;
@@ -356,7 +417,7 @@ static void dealGooDamage(CNSocket *sock, int amount) {
     dmg->iID = plr->iID;
     dmg->iDamage = amount;
     dmg->iHP = plr->HP;
-    dmg->iConditionBitFlag = plr->iConditionBitFlag;
+    dmg->iConditionBitFlag = plr->getCompositeCondition();
 
     sock->sendPacket((void*)&respbuf, P_FE2CL_CHAR_TIME_BUFF_TIME_TICK, resplen);
     PlayerManager::sendToViewable(sock, (void*)&respbuf, P_FE2CL_CHAR_TIME_BUFF_TIME_TICK, resplen);
@@ -664,7 +725,7 @@ static void playerTick(CNServer *serv, time_t currTime) {
             continue;
 
         // fm patch/lake damage
-        if ((plr->iConditionBitFlag & CSB_BIT_INFECTION)
+        if ((plr->hasBuff(ECSB_INFECTION))
             && !(plr->iSpecialState & CN_SPECIAL_STATE_FLAG__INVULNERABLE))
             dealGooDamage(sock, PC_MAXHEALTH(plr->level) * 3 / 20);
 
@@ -692,7 +753,7 @@ static void playerTick(CNServer *serv, time_t currTime) {
                     drainRate = skill->batteryUse[boost * 3];
 
                     if (skill->drainType == SkillDrainType::PASSIVE) {
-                        // passive buff
+                        // apply passive buff
                         std::vector<EntityRef> targets;
                         if (skill->targetType == SkillTargetType::GROUP && plr->group != nullptr)
                             targets = plr->group->members; // group
@@ -700,6 +761,7 @@ static void playerTick(CNServer *serv, time_t currTime) {
                             targets.push_back(sock); // self
 
                         std::cout << "[SKILL] id " << nano.iSkillID << ", type " << skill->skillType << ", target " << (int)skill->targetType << std::endl;
+                        // TODO abilities
                     }
                 }
 
@@ -732,6 +794,17 @@ static void playerTick(CNServer *serv, time_t currTime) {
             PlayerManager::sendToViewable(sock, (void*)&dead, P_FE2CL_PC_SUDDEN_DEAD, sizeof(sP_FE2CL_PC_SUDDEN_DEAD));
         }
 
+        // process buffsets
+        auto it = plr->buffs.begin();
+        while(it != plr->buffs.end()) {
+            int buffId = (*it).first;
+            Buff* buff = (*it).second;
+            buff->onTick();
+            if(buff->isStale()) it = plr->buffs.erase(it);
+            else it++;
+        }
+        //
+
         if (transmit) {
             INITSTRUCT(sP_FE2CL_REP_PC_TICK, pkt);
 
@@ -752,7 +825,7 @@ static void playerTick(CNServer *serv, time_t currTime) {
 }
 
 void Combat::init() {
-    REGISTER_SHARD_TIMER(playerTick, 2000);
+    REGISTER_SHARD_TIMER(playerTick, MS_PER_PLAYER_TICK);
 
     REGISTER_SHARD_PACKET(P_CL2FE_REQ_PC_ATTACK_NPCs, pcAttackNpcs);
 

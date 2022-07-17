@@ -184,7 +184,7 @@ int Nanos::nanoStyle(int nanoID) {
 bool Nanos::getNanoBoost(Player* plr) {
     for (int i = 0; i < 3; i++) 
         if (plr->equippedNanos[i] == plr->activeNano)
-            if (plr->iConditionBitFlag & (CSB_BIT_STIMPAKSLOT1 << i))
+            if (plr->hasBuff(ECSB_STIMPAKSLOT1 + i))
                 return true;
     return false;
 }
@@ -209,16 +209,8 @@ static void nanoEquipHandler(CNSocket* sock, CNPacketData* data) {
     plr->equippedNanos[nano->iNanoSlotNum] = nano->iNanoID;
 
     // Unbuff gumballs
-    int value1 = CSB_BIT_STIMPAKSLOT1 << nano->iNanoSlotNum;
-    if (plr->iConditionBitFlag & value1) {
-        int value2 = ECSB_STIMPAKSLOT1 + nano->iNanoSlotNum;
-        INITSTRUCT(sP_FE2CL_PC_BUFF_UPDATE, pkt);
-        pkt.eCSTB = value2; // eCharStatusTimeBuffID
-        pkt.eTBU = 2; // eTimeBuffUpdate
-        pkt.eTBT = 1; // eTimeBuffType 1 means nano
-        pkt.iConditionBitFlag = plr->iConditionBitFlag &= ~value1;
-        sock->sendPacket(pkt, P_FE2CL_PC_BUFF_UPDATE);
-    }
+    int buffId = ECSB_STIMPAKSLOT1 + nano->iNanoSlotNum;
+    plr->removeBuff(buffId);
 
     // unsummon nano if replaced
     if (plr->activeNano == plr->equippedNanos[nano->iNanoSlotNum])

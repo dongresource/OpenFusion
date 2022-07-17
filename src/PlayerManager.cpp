@@ -36,6 +36,11 @@ void PlayerManager::removePlayer(CNSocket* key) {
     Player* plr = getPlayer(key);
     uint64_t fromInstance = plr->instanceID;
 
+    // free buff memory
+    for(auto buffEntry : plr->buffs)
+        delete buffEntry.second;
+
+    // leave group
     if(plr->group != nullptr)
         Groups::groupKick(plr);
 
@@ -403,7 +408,7 @@ static void revivePlayer(CNSocket* sock, CNPacketData* data) {
 
     switch ((ePCRegenType)reviveData->iRegenType) {
     case ePCRegenType::HereByPhoenix: // nano revive
-        if (!(plr->iConditionBitFlag & CSB_BIT_PHOENIX))
+        if (!(plr->hasBuff(ECSB_PHOENIX)))
             return; // sanity check
         plr->Nanos[plr->activeNano].iStamina = 0;
         // TODO ABILITIES
