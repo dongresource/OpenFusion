@@ -496,7 +496,7 @@ static void itemUseHandler(CNSocket* sock, CNPacketData* data) {
         eCSB,
         durationMilliseconds / MS_PER_PLAYER_TICK,
         sock,
-        BuffClass::CONSUMABLE,
+        BuffClass::CASH_ITEM, // or BuffClass::ITEM?
         Buffs::timeBuffUpdateAdd,
         nullptr,
         Buffs::timeBuffUpdateDelete,

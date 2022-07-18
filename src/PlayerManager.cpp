@@ -66,16 +66,6 @@ void PlayerManager::removePlayer(CNSocket* key) {
     // if the player was in a lair, clean it up
     Chunking::destroyInstanceIfEmpty(fromInstance);
 
-    // remove player's buffs from the server
-    auto it = Eggs::EggBuffs.begin();
-    while (it != Eggs::EggBuffs.end()) {
-        if (it->first.first == key) {
-            it = Eggs::EggBuffs.erase(it);
-        }
-        else
-            it++;
-    }
-
     std::cout << players.size() << " players" << std::endl;
 }
 

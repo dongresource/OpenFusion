@@ -23,7 +23,7 @@ void Buff::onTick() {
         if(stack.durationTicks > 0) stack.durationTicks--;
         if(stack.durationTicks == 0) {
             it = stacks.erase(it);
-            stack.onExpire(self, &stack);
+            if(stack.onExpire != nullptr) stack.onExpire(self, &stack);
         } else it++;
     }
 }
