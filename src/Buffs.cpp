@@ -2,67 +2,58 @@
 
 #include "PlayerManager.hpp"
 
-#include <assert.h>
-#include <set>
-
 using namespace Buffs;
 
-void Buff::onTick() {
-    assert(!stacks.empty());
-
-    std::set<BuffCallback> callbacks;
+void Buff::tick() {
     auto it = stacks.begin();
     while(it != stacks.end()) {
         BuffStack& stack = *it;
-        if(stack.onTick != nullptr && callbacks.count(stack.onTick) == 0) {
-            // unique callback
-            stack.onTick(self, &stack);
-            callbacks.insert(stack.onTick);
-        }
+        if(stack.onTick) stack.onTick(self, &stack);
 
         if(stack.durationTicks > 0) stack.durationTicks--;
         if(stack.durationTicks == 0) {
             it = stacks.erase(it);
-            if(stack.onExpire != nullptr) stack.onExpire(self, &stack);
+            if(stack.onExpire) stack.onExpire(self, &stack);
         } else it++;
     }
 }
 
-void Buff::onExpire() {
-    assert(!stacks.empty());
-
-    std::set<BuffCallback> callbacks;
+void Buff::clear() {
     while(!stacks.empty()) {
         BuffStack stack = stacks.back();
         stacks.pop_back();
-        if(stack.onExpire != nullptr && callbacks.count(stack.onExpire) == 0) {
-            // execute unique callback
-            callbacks.insert(stack.onExpire);
-            stack.onExpire(self, &stack);
-        }
+        if(stack.onExpire) stack.onExpire(self, &stack);
     }
 }
 
 void Buff::addStack(BuffStack* stack) {
+    if(stack->onApply) stack->onApply(self, stack);
     stacks.push_back(*stack);
 }
 
-BuffStack* Buff::getDominantBuff() {
-    assert(!stacks.empty());
-
-    BuffStack* dominant = nullptr;
+bool Buff::hasClass(BuffClass buffClass) {
     for(BuffStack& stack : stacks) {
-        if(stack.buffClass > dominant->buffClass)
-            dominant = &stack;
+        if(stack.buffClass == buffClass)
+            return true;
     }
-    return dominant;
+    return false;
+}
+
+BuffClass Buff::maxClass() {
+    BuffClass buffClass = BuffClass::NONE;
+    for(BuffStack& stack : stacks) {
+        if(stack.buffClass > buffClass)
+            buffClass = stack.buffClass;
+    }
+    return buffClass;
 }
 
 bool Buff::isStale() {
     return stacks.empty();
 }
 
-static void timeBuffUpdate(EntityRef self, BuffStack* buff, int type) {
+#pragma region Handlers
+void Buffs::timeBuffUpdate(EntityRef self, BuffStack* buff, int status) {
 
     if(self.kind != EntityKind::PLAYER)
         return; // not implemented
@@ -70,16 +61,22 @@ static void timeBuffUpdate(EntityRef self, BuffStack* buff, int type) {
     Player* plr = (Player*)self.getEntity();
     if(plr == nullptr)
         return;
+
+    if(status == ETBU_DEL && plr->hasBuff(buff->id))
+        return; // no premature status removal!
+
+    int cbf = plr->getCompositeCondition();
+    if(status == ETBU_ADD) cbf |= CSB_FROM_ECSB(buff->id);
     
     INITSTRUCT(sP_FE2CL_PC_BUFF_UPDATE, pkt);
     pkt.eCSTB = buff->id; // eCharStatusTimeBuffID
-    pkt.eTBU = type; // eTimeBuffUpdate
+    pkt.eTBU = status; // eTimeBuffUpdate
     pkt.eTBT = (int)buff->buffClass;
-    pkt.iConditionBitFlag = plr->getCompositeCondition();
+    pkt.iConditionBitFlag = cbf;
     self.sock->sendPacket((void*)&pkt, P_FE2CL_PC_BUFF_UPDATE, sizeof(sP_FE2CL_PC_BUFF_UPDATE));
 }
 
-static void timeBuffTimeoutViewable(EntityRef self) {
+void Buffs::timeBuffTimeoutViewable(EntityRef self, BuffStack* buff, int ct) {
     if(self.kind != EntityKind::PLAYER)
         return; // not implemented
     
@@ -88,21 +85,15 @@ static void timeBuffTimeoutViewable(EntityRef self) {
         return;
 
     INITSTRUCT(sP_FE2CL_CHAR_TIME_BUFF_TIME_OUT, pkt); // send a buff timeout to other players
-    pkt.eCT = 1;
+    pkt.eCT = ct; // 1 for eggs, at least
     pkt.iID = plr->iID;
     pkt.iConditionBitFlag = plr->getCompositeCondition();
     PlayerManager::sendToViewable(self.sock, pkt, P_FE2CL_CHAR_TIME_BUFF_TIME_OUT);
 }
 
-void Buffs::timeBuffUpdateAdd(EntityRef self, BuffStack* buff) {
-    timeBuffUpdate(self, buff, ETBU_ADD);
-}
-
-void Buffs::timeBuffUpdateDelete(EntityRef self, BuffStack* buff) {
-    timeBuffUpdate(self, buff, ETBU_DEL);
-}
-
+/* MOVE TO EGG LAMBDA
 void Buffs::timeBuffTimeout(EntityRef self, BuffStack* buff) {
     timeBuffUpdate(self, buff, ETBU_DEL);
     timeBuffTimeoutViewable(self);
-}
+} */
+#pragma endregion

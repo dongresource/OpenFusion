@@ -90,7 +90,7 @@ struct Player : public Entity, public ICombatant {
     virtual void disappearFromViewOf(CNSocket *sock) override;
 
     virtual void addBuff(BuffStack* buff) override;
-    virtual BuffStack* getBuff(int buffId) override;
+    virtual Buff* getBuff(int buffId) override;
     virtual void removeBuff(int buffId) override;
     virtual bool hasBuff(int buffId) override;
     virtual int getCompositeCondition() override;

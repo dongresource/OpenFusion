@@ -12,6 +12,7 @@
 
 #include <assert.h>
 #include <iostream>
+#include <functional>
 
 using namespace Combat;
 
@@ -20,37 +21,35 @@ std::map<int32_t, std::map<int8_t, Bullet>> Combat::Bullets;
 
 void Player::addBuff(BuffStack* buff) {
     EntityRef self = PlayerManager::getSockFromID(iID);
-    if(!hasBuff(buff->id)) {
-        buffs[buff->id] = new Buff(self, buff);
-    }
+    if(!hasBuff(buff->id)) buffs[buff->id] = new Buff(self, buff);
     else buffs[buff->id]->addStack(buff);
-    buff->onApply(self, buff);
 }
 
-BuffStack* Player::getBuff(int buffId) {
+Buff* Player::getBuff(int buffId) {
     if(hasBuff(buffId)) {
-        return buffs[buffId]->getDominantBuff();
+        return buffs[buffId];
     }
     return nullptr;
 }
 
 void Player::removeBuff(int buffId) {
     if(hasBuff(buffId)) {
-        buffs[buffId]->onExpire();
+        buffs[buffId]->clear();
         delete buffs[buffId];
         buffs.erase(buffId);
     }
 }
 
 bool Player::hasBuff(int buffId) {
-    return buffs.find(buffId) != buffs.end();
+    auto buff = buffs.find(buffId);
+    return buff != buffs.end() && !buff->second->isStale();
 }
 
 int Player::getCompositeCondition() {
     int conditionBitFlag = 0;
-    for(auto buffEntry : buffs) {
-        if(!buffEntry.second->isStale())
-            conditionBitFlag |= CSB_FROM_ECSB(buffEntry.first);
+    for(auto buff : buffs) {
+        if(!buff.second->isStale())
+            conditionBitFlag |= CSB_FROM_ECSB(buff.first);
     }
     return conditionBitFlag;
 }
@@ -82,7 +81,7 @@ void Player::step(time_t currTime) {
 
 void CombatNPC::addBuff(BuffStack* buff) { /* stubbed */ }
 
-BuffStack* CombatNPC::getBuff(int buffId) { /* stubbed */
+Buff* CombatNPC::getBuff(int buffId) { /* stubbed */
     return nullptr;
 }
 
@@ -366,9 +365,14 @@ static void dotDamageOnOff(CNSocket *sock, CNPacketData *data) {
             -1, // infinite
             sock, // self-inflicted
             BuffClass::ENVIRONMENT,
-            Buffs::timeBuffUpdateAdd,
-            nullptr, // client ticks for us! todo anticheat lol
-            Buffs::timeBuffUpdateDelete
+
+            [](EntityRef host, BuffStack* stack)  {
+                Buffs::timeBuffUpdate(host, stack, ETBU_ADD);
+            },
+            nullptr, // client toggles for us! todo anticheat lol
+            [](EntityRef host, BuffStack* stack)  {
+                Buffs::timeBuffUpdate(host, stack, ETBU_DEL);
+            },
         };
         plr->addBuff(&infection);
     } else if(!pkt->iFlag && plr->hasBuff(ECSB_INFECTION)) {
@@ -387,13 +391,13 @@ static void dealGooDamage(CNSocket *sock, int amount) {
     sP_FE2CL_CHAR_TIME_BUFF_TIME_TICK *pkt = (sP_FE2CL_CHAR_TIME_BUFF_TIME_TICK*)respbuf;
     sSkillResult_DotDamage *dmg = (sSkillResult_DotDamage*)(respbuf + sizeof(sP_FE2CL_CHAR_TIME_BUFF_TIME_TICK));
 
-    BuffStack* protectionBuff = plr->getBuff(ECSB_PROTECT_INFECTION);
+    Buff* protectionBuff = plr->getBuff(ECSB_PROTECT_INFECTION);
     if (protectionBuff != nullptr) {
         amount = -2; // -2 is the magic number for "Protected" to appear as the damage number
         dmg->bProtected = 1;
 
         // eggs allow protection without nanos
-        if (protectionBuff->buffClass == BuffClass::NANO && plr->activeNano != -1)
+        if (protectionBuff->maxClass() <= BuffClass::NANO && plr->activeNano != -1)
             plr->Nanos[plr->activeNano].iStamina -= 3;
     } else {
         plr->HP -= amount;
@@ -799,8 +803,12 @@ static void playerTick(CNServer *serv, time_t currTime) {
         while(it != plr->buffs.end()) {
             int buffId = (*it).first;
             Buff* buff = (*it).second;
-            buff->onTick();
-            if(buff->isStale()) it = plr->buffs.erase(it);
+            buff->tick();
+            if(buff->isStale()) {
+                // garbage collect
+                it = plr->buffs.erase(it);
+                delete buff;
+            }
             else it++;
         }
         //

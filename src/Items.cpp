@@ -497,9 +497,14 @@ static void itemUseHandler(CNSocket* sock, CNPacketData* data) {
         durationMilliseconds / MS_PER_PLAYER_TICK,
         sock,
         BuffClass::CASH_ITEM, // or BuffClass::ITEM?
-        Buffs::timeBuffUpdateAdd,
-        nullptr,
-        Buffs::timeBuffUpdateDelete,
+
+        [](EntityRef host, BuffStack* stack)  {
+            Buffs::timeBuffUpdate(host, stack, ETBU_ADD);
+        },
+        nullptr, // client toggles for us! todo anticheat lol
+        [](EntityRef host, BuffStack* stack)  {
+            Buffs::timeBuffUpdate(host, stack, ETBU_DEL);
+        },
     };
     player->addBuff(&gumballBuff);
 

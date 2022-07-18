@@ -5,6 +5,7 @@
 #include "Entities.hpp"
 
 #include <vector>
+#include <functional>
 
 /* forward declaration(s) */
 struct BuffStack;
@@ -21,7 +22,7 @@ enum class BuffClass {
 	CASH_ITEM = ETBT_CASHITEM
 };
 
-typedef void (*BuffCallback)(EntityRef, BuffStack*);
+typedef std::function<void(EntityRef, BuffStack*)> BuffCallback;
 
 struct BuffStack {
     int id; // ECSB
@@ -29,8 +30,13 @@ struct BuffStack {
     EntityRef source;
     BuffClass buffClass;
 
+    /* called just before the stack is added */
     BuffCallback onApply;
+
+    /* called when the stack is ticked */
     BuffCallback onTick;
+
+    /* called just after the stack is removed */
     BuffCallback onExpire;
 };
 
@@ -40,20 +46,17 @@ private:
     std::vector<BuffStack> stacks;
 
 public:
-    void onTick();
-    void onExpire();
+    void tick();
+    void clear();
     void addStack(BuffStack* stack);
 
     /*
-    * Why do this madness? Let me tell you why.
-    * We need to be able to distinguish whether a player's
-    * buff is from something like an egg vs. their nano,
-    * because there are cases where the behavior is different.
-    * Now, this is impossible to do when they all get composited
-    * to a single bitfield. So we use a "buff class" and pick
-    * the buff stack that is most "dominant".
+    * Sometimes we need to determine if a buff
+    * is covered by a certain class, ex: nano
+    * vs. coco egg in the case of infection protection
     */
-    BuffStack* getDominantBuff();
+    bool hasClass(BuffClass buffClass);
+    BuffClass maxClass();
 
     /* 
      * In general, a Buff object won't exist
@@ -71,7 +74,6 @@ public:
 };
 
 namespace Buffs {
-    void timeBuffUpdateAdd(EntityRef self, BuffStack* buff);
-    void timeBuffUpdateDelete(EntityRef self, BuffStack* buff);
-    void timeBuffTimeout(EntityRef self, BuffStack* buff);
+    void timeBuffUpdate(EntityRef self, BuffStack* buff, int status);
+    void timeBuffTimeoutViewable(EntityRef self, BuffStack* buff, int ct);
 }
