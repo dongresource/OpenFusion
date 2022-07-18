@@ -475,10 +475,8 @@ static void revivePlayer(CNSocket* sock, CNPacketData* data) {
     resp2.PCRegenDataForOtherPC.iAngle = plr->angle;
 
     if (plr->group != nullptr) {
-        // TODO ABILITIES
-        //int bitFlag = plr->group->conditionBitFlag;
-        //resp2.PCRegenDataForOtherPC.iConditionBitFlag = plr->iConditionBitFlag = plr->iSelfConditionBitFlag | bitFlag;
-
+        
+        resp2.PCRegenDataForOtherPC.iConditionBitFlag = plr->getCompositeCondition();
         resp2.PCRegenDataForOtherPC.iPCState = plr->iPCState;
         resp2.PCRegenDataForOtherPC.iSpecialState = plr->iSpecialState;
         resp2.PCRegenDataForOtherPC.Nano = plr->Nanos[plr->activeNano];

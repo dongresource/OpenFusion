@@ -74,9 +74,24 @@ static void timeBuffUpdate(EntityRef self, BuffStack* buff, int type) {
     INITSTRUCT(sP_FE2CL_PC_BUFF_UPDATE, pkt);
     pkt.eCSTB = buff->id; // eCharStatusTimeBuffID
     pkt.eTBU = type; // eTimeBuffUpdate
-    pkt.eTBT = (buff->buffClass <= BuffClass::CONSUMABLE); // eTimeBuffType 1 means nano
+    pkt.eTBT = (int)buff->buffClass;
     pkt.iConditionBitFlag = plr->getCompositeCondition();
     self.sock->sendPacket((void*)&pkt, P_FE2CL_PC_BUFF_UPDATE, sizeof(sP_FE2CL_PC_BUFF_UPDATE));
+}
+
+static void timeBuffTimeoutViewable(EntityRef self) {
+    if(self.kind != EntityKind::PLAYER)
+        return; // not implemented
+    
+    Player* plr = (Player*)self.getEntity();
+    if(plr == nullptr)
+        return;
+
+    INITSTRUCT(sP_FE2CL_CHAR_TIME_BUFF_TIME_OUT, pkt); // send a buff timeout to other players
+    pkt.eCT = 1;
+    pkt.iID = plr->iID;
+    pkt.iConditionBitFlag = plr->getCompositeCondition();
+    PlayerManager::sendToViewable(self.sock, pkt, P_FE2CL_CHAR_TIME_BUFF_TIME_OUT);
 }
 
 void Buffs::timeBuffUpdateAdd(EntityRef self, BuffStack* buff) {
@@ -85,4 +100,9 @@ void Buffs::timeBuffUpdateAdd(EntityRef self, BuffStack* buff) {
 
 void Buffs::timeBuffUpdateDelete(EntityRef self, BuffStack* buff) {
     timeBuffUpdate(self, buff, ETBU_DEL);
+}
+
+void Buffs::timeBuffTimeout(EntityRef self, BuffStack* buff) {
+    timeBuffUpdate(self, buff, ETBU_DEL);
+    timeBuffTimeoutViewable(self);
 }

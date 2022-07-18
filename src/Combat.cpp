@@ -365,7 +365,7 @@ static void dotDamageOnOff(CNSocket *sock, CNPacketData *data) {
             ECSB_INFECTION,
             -1, // infinite
             sock, // self-inflicted
-            BuffClass::OTHER,
+            BuffClass::ENVIRONMENT,
             Buffs::timeBuffUpdateAdd,
             nullptr, // client ticks for us! todo anticheat lol
             Buffs::timeBuffUpdateDelete

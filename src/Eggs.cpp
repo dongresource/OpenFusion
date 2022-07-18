@@ -13,16 +13,12 @@
 
 using namespace Eggs;
 
-/// sock, CBFlag -> until
-std::map<std::pair<CNSocket*, int32_t>, time_t> Eggs::EggBuffs;
 std::unordered_map<int, EggType> Eggs::EggTypes;
 
 int Eggs::eggBuffPlayer(CNSocket* sock, int skillId, int eggId, int duration) {
     Player* plr = PlayerManager::getPlayer(sock);
 
     // TODO ABILITIES
-    //int bitFlag = plr->group->conditionBitFlag;
-    int CBFlag = 0;// Abilities::applyBuff(sock, skillId, 1, 3, bitFlag);
 
     size_t resplen; 
 
@@ -75,56 +71,10 @@ int Eggs::eggBuffPlayer(CNSocket* sock, int skillId, int eggId, int duration) {
     sock->sendPacket((void*)&respbuf, P_FE2CL_NPC_SKILL_HIT, resplen);
     PlayerManager::sendToViewable(sock, (void*)&respbuf, P_FE2CL_NPC_SKILL_HIT, resplen);
 
-    if (CBFlag == 0)
-        return -1;
-
-    std::pair<CNSocket*, int32_t> key = std::make_pair(sock, CBFlag);
-
-    // save the buff serverside;
-    // if you get the same buff again, new duration will override the previous one
-    time_t until = getTime() + (time_t)duration * 1000;
-    EggBuffs[key] = until;
-
     return 0;
 }
 
 static void eggStep(CNServer* serv, time_t currTime) {
-    // tick buffs
-    time_t timeStamp = currTime;
-    auto it = EggBuffs.begin();
-    while (it != EggBuffs.end()) {
-        // check remaining time
-        if (it->second > timeStamp) {
-            it++;
-        } else { // if time reached 0
-            CNSocket* sock = it->first.first;
-            int32_t CBFlag = it->first.second;
-            Player* plr = PlayerManager::getPlayer(sock);
-
-            //int groupFlags = plr->group->conditionBitFlag;
-            // TODO ABILITIES
-            //for (auto& pwr : Abilities::Powers) {
-            //    if (pwr.bitFlag == CBFlag) { // pick the power with the right flag and unbuff
-            //        INITSTRUCT(sP_FE2CL_PC_BUFF_UPDATE, resp);
-            //        resp.eCSTB = pwr.timeBuffID;
-            //        resp.eTBU = 2;
-            //        resp.eTBT = 3; // for egg buffs
-            //        plr->iConditionBitFlag &= ~CBFlag;
-            //        resp.iConditionBitFlag = plr->iConditionBitFlag |= groupFlags | plr->iSelfConditionBitFlag;
-            //        sock->sendPacket(resp, P_FE2CL_PC_BUFF_UPDATE);
-
-            //        INITSTRUCT(sP_FE2CL_CHAR_TIME_BUFF_TIME_OUT, resp2); // send a buff timeout to other players
-            //        resp2.eCT = 1;
-            //        resp2.iID = plr->iID;
-            //        resp2.iConditionBitFlag = plr->iConditionBitFlag;
-            //        PlayerManager::sendToViewable(sock, resp2, P_FE2CL_CHAR_TIME_BUFF_TIME_OUT);
-            //    }
-            //}
-            // remove buff from the map
-            it = EggBuffs.erase(it);
-        }
-    }
-
     // check dead eggs and eggs in inactive chunks
     for (auto npc : NPCManager::NPCs) {
         if (npc.second->kind != EntityKind::EGG)
@@ -134,7 +84,7 @@ static void eggStep(CNServer* serv, time_t currTime) {
         if (!egg->dead || !Chunking::inPopulatedChunks(&egg->viewableChunks))
             continue;
 
-        if (egg->deadUntil <= timeStamp) {
+        if (egg->deadUntil <= currTime) {
             // respawn it
             egg->dead = false;
             egg->deadUntil = 0;

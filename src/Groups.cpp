@@ -149,7 +149,6 @@ static void joinGroup(CNSocket* sock, CNPacketData* data) {
     resp->iID_NewMember = plr->iID;
     resp->iMemberPCCnt = players.size();
 
-    //int bitFlag = otherPlr->group->conditionBitFlag;
     for (int i = 0; i < players.size(); i++) {
 
         Player* varPlr = PlayerManager::getPlayer(players[i].sock);
@@ -173,14 +172,6 @@ static void joinGroup(CNSocket* sock, CNPacketData* data) {
         respdata[i].iY = varPlr->y;
         respdata[i].iZ = varPlr->z;
         // client doesnt read nano data here
-
-        if (varPlr != plr) { // apply the new member's buffs to the group and the group's buffs to the new member
-            // TODO ABILITIES
-            /*if (Abilities::SkillTable[varPlr->Nanos[varPlr->activeNano].iSkillID].targetType == 3)
-                Abilities::applyBuff(sock, varPlr->Nanos[varPlr->activeNano].iSkillID, 1, 1, bitFlag);
-            if (Abilities::SkillTable[plr->Nanos[plr->activeNano].iSkillID].targetType == 3)
-                Abilities::applyBuff(sockTo, plr->Nanos[plr->activeNano].iSkillID, 1, 1, bitFlag);*/
-        }
     }
 
     Groups::sendToGroup(otherPlr->group, (void*)&respbuf, P_FE2CL_PC_GROUP_JOIN, resplen);
@@ -294,8 +285,6 @@ void Groups::groupKick(Player* plr) {
     resp->iID_LeaveMember = plr->iID;
     resp->iMemberPCCnt = players.size() - 1;
 
-    int bitFlag = 0; // TODO ABILITIES getGroupFlags(otherPlr) & ~plr->iGroupConditionBitFlag;
-
     CNSocket* sock = PlayerManager::getSockFromID(plr->iID);
 
     if (sock == nullptr)
@@ -326,13 +315,6 @@ void Groups::groupKick(Player* plr) {
         respdata[i].iY = varPlr->y;
         respdata[i].iZ = varPlr->z;
         // client doesnt read nano data here
-
-        // remove the leaving member's buffs from the group and remove the group buffs from the leaving member.
-            // TODO ABILITIES
-          /*if (Abilities::SkillTable[varPlr->Nanos[varPlr->activeNano].iSkillID].targetType == 3)
-                Abilities::applyBuff(sock, varPlr->Nanos[varPlr->activeNano].iSkillID, 2, 1, 0);
-            if (Abilities::SkillTable[plr->Nanos[varPlr->activeNano].iSkillID].targetType == 3)
-                Abilities::applyBuff(sockTo, plr->Nanos[plr->activeNano].iSkillID, 2, 1, bitFlag);*/
     }
 
     sendToGroup(group, (void*)&respbuf, P_FE2CL_PC_GROUP_LEAVE, resplen);

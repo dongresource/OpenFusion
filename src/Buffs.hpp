@@ -12,10 +12,13 @@ struct BuffStack;
 #define CSB_FROM_ECSB(x) (1 << (x - 1))
 
 enum class BuffClass {
-    NANO = 0,
-    CONSUMABLE,
-    EGG,
-    OTHER
+    NONE = ETBT_NONE,
+	NANO = ETBT_NANO,
+	GROUP_NANO = ETBT_GROUPNANO,
+	EGG = ETBT_SHINY,
+	ENVIRONMENT = ETBT_LANDEFFECT,
+	ITEM = ETBT_ITEM,
+	CASH_ITEM = ETBT_CASHITEM
 };
 
 typedef void (*BuffCallback)(EntityRef, BuffStack*);
@@ -70,4 +73,5 @@ public:
 namespace Buffs {
     void timeBuffUpdateAdd(EntityRef self, BuffStack* buff);
     void timeBuffUpdateDelete(EntityRef self, BuffStack* buff);
+    void timeBuffTimeout(EntityRef self, BuffStack* buff);
 }
