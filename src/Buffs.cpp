@@ -12,8 +12,12 @@ void Buff::tick() {
 
         if(stack.durationTicks > 0) stack.durationTicks--;
         if(stack.durationTicks == 0) {
+            // erase() destroys the callbacks
+            // with the stack struct, so we need
+            // to copy it first.
+            BuffStack deadStack = stack;
             it = stacks.erase(it);
-            if(stack.onExpire) stack.onExpire(self, &stack);
+            if(deadStack.onExpire) deadStack.onExpire(self, &deadStack);
         } else it++;
     }
 }
