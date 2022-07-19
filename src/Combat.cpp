@@ -19,10 +19,10 @@ using namespace Combat;
 /// Player Id -> Bullet Id -> Bullet
 std::map<int32_t, std::map<int8_t, Bullet>> Combat::Bullets;
 
-void Player::addBuff(BuffStack* buff) {
+void Player::addBuff(int buffId, BuffStack* stack) {
     EntityRef self = PlayerManager::getSockFromID(iID);
-    if(!hasBuff(buff->id)) buffs[buff->id] = new Buff(self, buff);
-    else buffs[buff->id]->addStack(buff);
+    if(!hasBuff(buffId)) buffs[buffId] = new Buff(buffId, self, stack);
+    else buffs[buffId]->addStack(stack);
 }
 
 Buff* Player::getBuff(int buffId) {
@@ -48,7 +48,7 @@ bool Player::hasBuff(int buffId) {
 int Player::getCompositeCondition() {
     int conditionBitFlag = 0;
     for(auto buff : buffs) {
-        if(!buff.second->isStale())
+        if(!buff.second->isStale() && buff.second->id > 0)
             conditionBitFlag |= CSB_FROM_ECSB(buff.first);
     }
     return conditionBitFlag;
@@ -79,7 +79,7 @@ void Player::step(time_t currTime) {
     // no-op
 }
 
-void CombatNPC::addBuff(BuffStack* buff) { /* stubbed */ }
+void CombatNPC::addBuff(int buffId, BuffStack* stack) { /* stubbed */ }
 
 Buff* CombatNPC::getBuff(int buffId) { /* stubbed */
     return nullptr;
@@ -361,7 +361,6 @@ static void dotDamageOnOff(CNSocket *sock, CNPacketData *data) {
     // so we add and remove a permanent debuff
     if (pkt->iFlag && !plr->hasBuff(ECSB_INFECTION)) {
         BuffStack infection = {
-            ECSB_INFECTION,
             -1, // infinite
             sock, // self-inflicted
             BuffClass::ENVIRONMENT,
@@ -372,9 +371,9 @@ static void dotDamageOnOff(CNSocket *sock, CNPacketData *data) {
             nullptr, // client toggles for us! todo anticheat lol
             [](EntityRef host, BuffStack* stack)  {
                 Buffs::timeBuffUpdate(host, stack, ETBU_DEL);
-            },
+            }
         };
-        plr->addBuff(&infection);
+        plr->addBuff(ECSB_INFECTION, &infection);
     } else if(!pkt->iFlag && plr->hasBuff(ECSB_INFECTION)) {
         plr->removeBuff(ECSB_INFECTION);
     }

@@ -493,7 +493,6 @@ static void itemUseHandler(CNSocket* sock, CNPacketData* data) {
 
     int durationMilliseconds = Abilities::SkillTable[144].durationTime[0] * 100;
     BuffStack gumballBuff = {
-        eCSB,
         durationMilliseconds / MS_PER_PLAYER_TICK,
         sock,
         BuffClass::CASH_ITEM, // or BuffClass::ITEM?
@@ -501,12 +500,12 @@ static void itemUseHandler(CNSocket* sock, CNPacketData* data) {
         [](EntityRef host, BuffStack* stack)  {
             Buffs::timeBuffUpdate(host, stack, ETBU_ADD);
         },
-        nullptr, // client toggles for us! todo anticheat lol
+        nullptr,
         [](EntityRef host, BuffStack* stack)  {
             Buffs::timeBuffUpdate(host, stack, ETBU_DEL);
-        },
+        }
     };
-    player->addBuff(&gumballBuff);
+    player->addBuff(eCSB, &gumballBuff);
 
     sock->sendPacket((void*)&respbuf, P_FE2CL_REP_PC_ITEM_USE_SUCC, resplen);
     // update inventory serverside

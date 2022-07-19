@@ -25,10 +25,9 @@ enum class BuffClass {
 typedef std::function<void(EntityRef, BuffStack*)> BuffCallback;
 
 struct BuffStack {
-    int id; // ECSB
     int durationTicks;
     EntityRef source;
-    BuffClass buffClass;
+    BuffClass buffStackClass;
 
     /* called just before the stack is added */
     BuffCallback onApply;
@@ -38,6 +37,8 @@ struct BuffStack {
 
     /* called just after the stack is removed */
     BuffCallback onExpire;
+
+    Buff* buff;
 };
 
 class Buff {
@@ -46,6 +47,8 @@ private:
     std::vector<BuffStack> stacks;
 
 public:
+    int id;
+
     void tick();
     void clear();
     void addStack(BuffStack* stack);
@@ -67,13 +70,13 @@ public:
      */
     bool isStale();
 
-    Buff(EntityRef pSelf, BuffStack* firstStack)
-        : self(pSelf) {
+    Buff(int iid, EntityRef pSelf, BuffStack* firstStack)
+        : id(iid), self(pSelf) {
         addStack(firstStack);
     }
 };
 
 namespace Buffs {
-    void timeBuffUpdate(EntityRef self, BuffStack* buff, int status);
-    void timeBuffTimeoutViewable(EntityRef self, BuffStack* buff, int ct);
+    void timeBuffUpdate(EntityRef self, BuffStack* stack, int status);
+    void timeBuffTimeoutViewable(EntityRef self, BuffStack* stack, int ct);
 }

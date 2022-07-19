@@ -26,12 +26,13 @@ enum class SkillDrainType {
 };
 
 struct SkillData {
-    int skillType;
+    int skillType; // eST
     SkillEffectTarget effectTarget;
     int effectType; // always 1?
     SkillTargetType targetType;
     SkillDrainType drainType;
     int effectArea;
+    int charStatusTimeBuffId; // eCS(T)B
 
     int batteryUse[4];
     int durationTime[4];

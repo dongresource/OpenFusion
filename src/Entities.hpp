@@ -92,7 +92,7 @@ public:
     ICombatant() {}
     virtual ~ICombatant() {}
 
-    virtual void addBuff(BuffStack* buff) = 0;
+    virtual void addBuff(int buffId, BuffStack* stack) = 0;
     virtual Buff* getBuff(int buffId) = 0;
     virtual void removeBuff(int buffId) = 0;
     virtual bool hasBuff(int buffId) = 0;
@@ -158,7 +158,7 @@ struct CombatNPC : public BaseNPC, public ICombatant {
 
     virtual bool isExtant() override { return hp > 0; }
 
-    virtual void addBuff(BuffStack* buff) override;
+    virtual void addBuff(int buffId, BuffStack* stack) override;
     virtual Buff* getBuff(int buffId) override;
     virtual void removeBuff(int buffId) override;
     virtual bool hasBuff(int buffId) override;
