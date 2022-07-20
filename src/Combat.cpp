@@ -71,6 +71,15 @@ int Player::getCurrentHP() {
     return HP;
 }
 
+std::vector<EntityRef> Player::getGroupMembers() {
+    std::vector<EntityRef> members;
+    if(group != nullptr)
+        members = group->members;
+    else
+        members.push_back(PlayerManager::getSockFromID(iID));
+    return members;
+}
+
 int32_t Player::getID() {
     return iID;
 }
@@ -114,6 +123,15 @@ bool CombatNPC::isAlive() {
 
 int CombatNPC::getCurrentHP() {
     return hp;
+}
+
+std::vector<EntityRef> CombatNPC::getGroupMembers() {
+    std::vector<EntityRef> members;
+    if(group != nullptr)
+        members = group->members;
+    else
+        members.push_back(id);
+    return members;
 }
 
 int32_t CombatNPC::getID() {
@@ -364,7 +382,6 @@ static void dotDamageOnOff(CNSocket *sock, CNPacketData *data) {
             -1, // infinite
             sock, // self-inflicted
             BuffClass::ENVIRONMENT,
-
             [](EntityRef host, BuffStack* stack)  {
                 Buffs::timeBuffUpdate(host, stack, ETBU_ADD);
             },
@@ -753,18 +770,12 @@ static void playerTick(CNServer *serv, time_t currTime) {
                     // nano has skill data
                     SkillData* skill = &Abilities::SkillTable[nano.iSkillID];
                     int boost = Nanos::getNanoBoost(plr);
-                    drainRate = skill->batteryUse[boost * 3];
+                    std::cout << "[SKILL] id " << nano.iSkillID << ", type " << skill->skillType << ", target " << (int)skill->targetType << std::endl;
 
                     if (skill->drainType == SkillDrainType::PASSIVE) {
                         // apply passive buff
-                        std::vector<EntityRef> targets;
-                        if (skill->targetType == SkillTargetType::GROUP && plr->group != nullptr)
-                            targets = plr->group->members; // group
-                        else if(skill->targetType == SkillTargetType::SELF)
-                            targets.push_back(sock); // self
-
-                        std::cout << "[SKILL] id " << nano.iSkillID << ", type " << skill->skillType << ", target " << (int)skill->targetType << std::endl;
-                        // TODO abilities
+                        drainRate = skill->batteryUse[boost * 3];
+                        Abilities::usePassiveNanoSkill(skill, plr);
                     }
                 }
 

@@ -496,7 +496,6 @@ static void itemUseHandler(CNSocket* sock, CNPacketData* data) {
         durationMilliseconds / MS_PER_PLAYER_TICK,
         sock,
         BuffClass::CASH_ITEM, // or BuffClass::ITEM?
-
         [](EntityRef host, BuffStack* stack)  {
             Buffs::timeBuffUpdate(host, stack, ETBU_ADD);
         },

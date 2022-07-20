@@ -235,8 +235,7 @@ static void loadXDT(json& xdtData) {
                 skill["m_iEffectType"],
                 skill["m_iTargetType"],
                 skill["m_iBatteryDrainType"],
-                skill["m_iEffectArea"],
-                (int)skill["m_iIcon"] - 1
+                skill["m_iEffectArea"]
             };
 
             skillData.valueTypes[0] = skill["m_iValueA_Type"];

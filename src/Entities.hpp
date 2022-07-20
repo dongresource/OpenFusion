@@ -101,6 +101,7 @@ public:
     virtual void heal(EntityRef, int) = 0;
     virtual bool isAlive() = 0;
     virtual int getCurrentHP() = 0;
+    virtual std::vector<EntityRef> getGroupMembers() = 0;
     virtual int32_t getID() = 0;
     virtual void step(time_t currTime) = 0;
 };
@@ -167,6 +168,7 @@ struct CombatNPC : public BaseNPC, public ICombatant {
     virtual void heal(EntityRef src, int amt) override;
     virtual bool isAlive() override;
     virtual int getCurrentHP() override;
+    virtual std::vector<EntityRef> getGroupMembers() override;
     virtual int32_t getID() override;
     virtual void step(time_t currTime) override;
 

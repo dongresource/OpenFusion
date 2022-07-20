@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Entities.hpp"
+#include "Player.hpp"
 
 #include <map>
 #include <vector>
@@ -32,7 +33,6 @@ struct SkillData {
     SkillTargetType targetType;
     SkillDrainType drainType;
     int effectArea;
-    int charStatusTimeBuffId; // eCS(T)B
 
     int batteryUse[4];
     int durationTime[4];
@@ -45,7 +45,9 @@ namespace Abilities {
     extern std::map<int32_t, SkillData> SkillTable;
 
     std::vector<EntityRef> matchTargets(SkillData*, int, int32_t*);
-    void useAbility(SkillData*, EntityRef, std::vector<EntityRef>);
+    int getCSTBFromST(int eSkillType);
+
+    void usePassiveNanoSkill(SkillData*, Player*);
 
     void init();
 }

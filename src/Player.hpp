@@ -98,6 +98,7 @@ struct Player : public Entity, public ICombatant {
     virtual void heal(EntityRef src, int amt) override;
     virtual bool isAlive() override;
     virtual int getCurrentHP() override;
+    virtual std::vector<EntityRef> getGroupMembers() override;
     virtual int32_t getID() override;
 
     virtual void step(time_t currTime) override;

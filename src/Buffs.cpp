@@ -10,7 +10,6 @@ void Buff::tick() {
         BuffStack& stack = *it;
         if(stack.onTick) stack.onTick(self, &stack);
 
-        if(stack.durationTicks > 0) stack.durationTicks--;
         if(stack.durationTicks == 0) {
             // erase() destroys the callbacks
             // with the stack struct, so we need
@@ -18,7 +17,10 @@ void Buff::tick() {
             BuffStack deadStack = stack;
             it = stacks.erase(it);
             if(deadStack.onExpire) deadStack.onExpire(self, &deadStack);
-        } else it++;
+        } else {
+            if(stack.durationTicks > 0) stack.durationTicks--;
+            it++;
+        }
     }
 }
 
@@ -31,9 +33,10 @@ void Buff::clear() {
 }
 
 void Buff::addStack(BuffStack* stack) {
-    stack->buff = this;
-    if(stack->onApply) stack->onApply(self, stack);
-    stacks.push_back(*stack);
+    BuffStack newStack = *stack;
+    newStack.buff = this;
+    if(newStack.onApply) newStack.onApply(self, &newStack);
+    stacks.push_back(newStack);
 }
 
 bool Buff::hasClass(BuffClass buffClass) {
