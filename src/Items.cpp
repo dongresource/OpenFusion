@@ -494,6 +494,7 @@ static void itemUseHandler(CNSocket* sock, CNPacketData* data) {
     int durationMilliseconds = Abilities::SkillTable[144].durationTime[0] * 100;
     BuffStack gumballBuff = {
         durationMilliseconds / MS_PER_PLAYER_TICK,
+        NULL,
         sock,
         BuffClass::CASH_ITEM, // or BuffClass::ITEM?
         [](EntityRef host, BuffStack* stack)  {

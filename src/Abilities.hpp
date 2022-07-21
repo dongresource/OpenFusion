@@ -47,7 +47,7 @@ namespace Abilities {
     std::vector<EntityRef> matchTargets(SkillData*, int, int32_t*);
     int getCSTBFromST(int eSkillType);
 
-    void usePassiveNanoSkill(SkillData*, Player*);
+    void usePassiveNanoSkill(SkillData*, Player*, int);
 
     void init();
 }

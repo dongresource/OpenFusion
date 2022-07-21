@@ -380,6 +380,7 @@ static void dotDamageOnOff(CNSocket *sock, CNPacketData *data) {
     if (pkt->iFlag && !plr->hasBuff(ECSB_INFECTION)) {
         BuffStack infection = {
             -1, // infinite
+            NULL,
             sock, // self-inflicted
             BuffClass::ENVIRONMENT,
             [](EntityRef host, BuffStack* stack)  {
@@ -775,7 +776,7 @@ static void playerTick(CNServer *serv, time_t currTime) {
                     if (skill->drainType == SkillDrainType::PASSIVE) {
                         // apply passive buff
                         drainRate = skill->batteryUse[boost * 3];
-                        Abilities::usePassiveNanoSkill(skill, plr);
+                        Abilities::usePassiveNanoSkill(skill, plr, boost * 3);
                     }
                 }
 

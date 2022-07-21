@@ -40,71 +40,71 @@ std::vector<EntityRef> Abilities::matchTargets(SkillData* skill, int count, int3
     return targets; 
 }
 
-/* ripped from client */
+/* ripped from client (enums emplaced) */
 int Abilities::getCSTBFromST(int eSkillType) {
     int result = 0;
     switch (eSkillType)
     {
-    case 11:
-        result = 1;
+    case EST_RUN:
+        result = ECSB_UP_MOVE_SPEED;
         break;
-    case 10:
-        result = 3;
+    case EST_JUMP:
+        result = ECSB_UP_JUMP_HEIGHT;
         break;
-    case 12:
-        result = 4;
+    case EST_STEALTH:
+        result = ECSB_UP_STEALTH;
         break;
-    case 16:
-        result = 5;
+    case EST_PHOENIX:
+        result = ECSB_PHOENIX;
         break;
-    case 17:
-        result = 6;
+    case EST_PROTECTBATTERY:
+        result = ECSB_PROTECT_BATTERY;
         break;
-    case 18:
-        result = 7;
+    case EST_PROTECTINFECTION:
+        result = ECSB_PROTECT_INFECTION;
         break;
-    case 5:
-        result = 8;
+    case EST_SNARE:
+        result = ECSB_DN_MOVE_SPEED;
         break;
-    case 4:
-        result = 11;
+    case EST_SLEEP:
+        result = ECSB_MEZ;
         break;
-    case 14:
-        result = 13;
+    case EST_MINIMAPENEMY:
+        result = ECSB_MINIMAP_ENEMY;
         break;
-    case 15:
-        result = 14;
+    case EST_MINIMAPTRESURE:
+        result = ECSB_MINIMAP_TRESURE;
         break;
-    case 19:
-        result = 15;
+    case EST_REWARDBLOB:
+        result = ECSB_REWARD_BLOB;
         break;
-    case 20:
-        result = 16;
+    case EST_REWARDCASH:
+        result = ECSB_REWARD_CASH;
         break;
-    case 23:
-        result = 17;
+    case EST_INFECTIONDAMAGE:
+        result = ECSB_INFECTION;
         break;
-    case 25:
-        result = 18;
+    case EST_FREEDOM:
+        result = ECSB_FREEDOM;
         break;
-    case 31:
-        result = 19;
+    case EST_BOUNDINGBALL:
+        result = ECSB_BOUNDINGBALL;
         break;
-    case 32:
-        result = 20;
+    case EST_INVULNERABLE:
+        result = ECSB_INVULNERABLE;
         break;
-    case 35:
-        result = 24;
+    case EST_BUFFHEAL:
+        result = ECSB_HEAL;
         break;
-    case 33:
-        result = 21;
+    case EST_NANOSTIMPAK:
+        result = ECSB_STIMPAKSLOT1;
         break;
     }
     return result;
 }
 
 #pragma region Skill Handlers
-void Abilities::usePassiveNanoSkill(SkillData* skill, Player* plr) {
+void Abilities::usePassiveNanoSkill(SkillData* skill, Player* plr, int boost) {
     assert(skill->drainType == SkillDrainType::PASSIVE);
 
     EntityRef self = PlayerManager::getSockFromID(plr->iID);
@@ -118,12 +118,17 @@ void Abilities::usePassiveNanoSkill(SkillData* skill, Player* plr) {
         std::cout << "[WARN] Passive skill with type " << skill->skillType << " has target type MOB" << std::endl;
     }
 
+    int timeBuffId = getCSTBFromST(skill->skillType);
+    int value = skill->values[0][boost];
+
     BuffStack passiveBuff = {
         1, // passive nano buffs refreshed every tick
+        value,
         self,
         BuffClass::NONE, // overwritten per target
         [](EntityRef host, BuffStack* stack)  {
             Buffs::timeBuffUpdate(host, stack, ETBU_ADD);
+            // TODO SKILLUSE/SKILLUSESUCC, sSkillResult_Buff
         },
         nullptr,
         [](EntityRef host, BuffStack* stack)  {
@@ -138,7 +143,7 @@ void Abilities::usePassiveNanoSkill(SkillData* skill, Player* plr) {
 
         passiveBuff.buffStackClass = target == self ? BuffClass::NANO : BuffClass::GROUP_NANO;
         ICombatant* combatant = dynamic_cast<ICombatant*>(entity);
-        combatant->addBuff(getCSTBFromST(skill->skillType), &passiveBuff);
+        combatant->addBuff(timeBuffId, &passiveBuff);
     }
 }
 #pragma endregion

@@ -26,6 +26,7 @@ typedef std::function<void(EntityRef, BuffStack*)> BuffCallback;
 
 struct BuffStack {
     int durationTicks;
+    int value;
     EntityRef source;
     BuffClass buffStackClass;
 

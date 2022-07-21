@@ -73,14 +73,21 @@ void Buffs::timeBuffUpdate(EntityRef self, BuffStack* stack, int status) {
     if(status == ETBU_DEL && plr->hasBuff(stack->buff->id))
         return; // no premature status removal!
 
+    sTimeBuff payload{};
+
     int cbf = plr->getCompositeCondition();
-    if(status == ETBU_ADD && stack->buff->id > 0) cbf |= CSB_FROM_ECSB(stack->buff->id);
+    if(status == ETBU_ADD) {
+        if(stack->buff->id > 0) cbf |= CSB_FROM_ECSB(stack->buff->id);
+        payload.iValue = stack->value;
+        //payload.iTimeLimit = stack->durationTicks * MS_PER_PLAYER_TICK;
+    }
     
     INITSTRUCT(sP_FE2CL_PC_BUFF_UPDATE, pkt);
     pkt.eCSTB = stack->buff->id; // eCharStatusTimeBuffID
     pkt.eTBU = status; // eTimeBuffUpdate
     pkt.eTBT = (int)stack->buffStackClass;
     pkt.iConditionBitFlag = cbf;
+    pkt.TimeBuff = payload;
     self.sock->sendPacket((void*)&pkt, P_FE2CL_PC_BUFF_UPDATE, sizeof(sP_FE2CL_PC_BUFF_UPDATE));
 }
 
