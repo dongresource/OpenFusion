@@ -19,10 +19,17 @@ using namespace Combat;
 /// Player Id -> Bullet Id -> Bullet
 std::map<int32_t, std::map<int8_t, Bullet>> Combat::Bullets;
 
-void Player::addBuff(int buffId, BuffStack* stack) {
+bool Player::addBuff(int buffId, BuffCallback<int, BuffStack*> onUpdate, BuffCallback<time_t> onTick, BuffStack* stack) {
     EntityRef self = PlayerManager::getSockFromID(iID);
-    if(!hasBuff(buffId)) buffs[buffId] = new Buff(buffId, self, stack);
-    else buffs[buffId]->addStack(stack);
+
+    if(!hasBuff(buffId)) {
+        buffs[buffId] = new Buff(buffId, self, onUpdate, onTick, stack);
+        return true;
+    }
+    
+    buffs[buffId]->updateCallbacks(onUpdate, onTick);
+    buffs[buffId]->addStack(stack);
+    return false;
 }
 
 Buff* Player::getBuff(int buffId) {
@@ -88,7 +95,9 @@ void Player::step(time_t currTime) {
     // no-op
 }
 
-void CombatNPC::addBuff(int buffId, BuffStack* stack) { /* stubbed */ }
+bool CombatNPC::addBuff(int buffId, BuffCallback<int, BuffStack*> onUpdate, BuffCallback<time_t> onTick, BuffStack* stack) { /* stubbed */
+    return false;
+}
 
 Buff* CombatNPC::getBuff(int buffId) { /* stubbed */
     return nullptr;
@@ -371,43 +380,20 @@ static void combatEnd(CNSocket *sock, CNPacketData *data) {
     plr->healCooldown = 4000;
 }
 
-static void dotDamageOnOff(CNSocket *sock, CNPacketData *data) {
-    sP_CL2FE_DOT_DAMAGE_ONOFF *pkt = (sP_CL2FE_DOT_DAMAGE_ONOFF*)data->buf;
+static void dealGooDamage(CNSocket *sock) {
     Player *plr = PlayerManager::getPlayer(sock);
+    if(plr->iSpecialState & CN_SPECIAL_STATE_FLAG__INVULNERABLE)
+        return; // ignore completely
 
-    // infection debuff toggles as the client asks it to,
-    // so we add and remove a permanent debuff
-    if (pkt->iFlag && !plr->hasBuff(ECSB_INFECTION)) {
-        BuffStack infection = {
-            -1, // infinite
-            NULL,
-            sock, // self-inflicted
-            BuffClass::ENVIRONMENT,
-            [](EntityRef host, BuffStack* stack)  {
-                Buffs::timeBuffUpdate(host, stack, ETBU_ADD);
-            },
-            nullptr, // client toggles for us! todo anticheat lol
-            [](EntityRef host, BuffStack* stack)  {
-                Buffs::timeBuffUpdate(host, stack, ETBU_DEL);
-            }
-        };
-        plr->addBuff(ECSB_INFECTION, &infection);
-    } else if(!pkt->iFlag && plr->hasBuff(ECSB_INFECTION)) {
-        plr->removeBuff(ECSB_INFECTION);
-    }
-}
-
-static void dealGooDamage(CNSocket *sock, int amount) {
     size_t resplen = sizeof(sP_FE2CL_CHAR_TIME_BUFF_TIME_TICK) + sizeof(sSkillResult_DotDamage);
     assert(resplen < CN_PACKET_BUFFER_SIZE - 8);
     uint8_t respbuf[CN_PACKET_BUFFER_SIZE];
-    Player *plr = PlayerManager::getPlayer(sock);
-
     memset(respbuf, 0, resplen);
 
     sP_FE2CL_CHAR_TIME_BUFF_TIME_TICK *pkt = (sP_FE2CL_CHAR_TIME_BUFF_TIME_TICK*)respbuf;
     sSkillResult_DotDamage *dmg = (sSkillResult_DotDamage*)(respbuf + sizeof(sP_FE2CL_CHAR_TIME_BUFF_TIME_TICK));
 
+    int amount = PC_MAXHEALTH(plr->level) * 3 / 20;
     Buff* protectionBuff = plr->getBuff(ECSB_PROTECT_INFECTION);
     if (protectionBuff != nullptr) {
         amount = -2; // -2 is the magic number for "Protected" to appear as the damage number
@@ -442,6 +428,33 @@ static void dealGooDamage(CNSocket *sock, int amount) {
 
     sock->sendPacket((void*)&respbuf, P_FE2CL_CHAR_TIME_BUFF_TIME_TICK, resplen);
     PlayerManager::sendToViewable(sock, (void*)&respbuf, P_FE2CL_CHAR_TIME_BUFF_TIME_TICK, resplen);
+}
+
+static void dotDamageOnOff(CNSocket *sock, CNPacketData *data) {
+    sP_CL2FE_DOT_DAMAGE_ONOFF *pkt = (sP_CL2FE_DOT_DAMAGE_ONOFF*)data->buf;
+    Player *plr = PlayerManager::getPlayer(sock);
+
+    // infection debuff toggles as the client asks it to,
+    // so we add and remove a permanent debuff
+    if (pkt->iFlag && !plr->hasBuff(ECSB_INFECTION)) {
+        BuffStack infection = {
+            -1, // infinite
+            0, // no value
+            sock, // self-inflicted
+            BuffClass::ENVIRONMENT
+        };
+        plr->addBuff(ECSB_INFECTION,
+            [](EntityRef self, Buff* buff, int status, BuffStack* stack) {
+                Buffs::timeBuffUpdate(self, buff, status, stack);
+            },
+            [](EntityRef self, Buff* buff, time_t currTime) {
+                if(self.kind == EntityKind::PLAYER)
+                    dealGooDamage(self.sock);
+            },
+            &infection);
+    } else if(!pkt->iFlag && plr->hasBuff(ECSB_INFECTION)) {
+        plr->removeBuff(ECSB_INFECTION);
+    }
 }
 
 static void pcAttackChars(CNSocket *sock, CNPacketData *data) {
@@ -745,11 +758,6 @@ static void playerTick(CNServer *serv, time_t currTime) {
         if (plr->HP <= 0)
             continue;
 
-        // fm patch/lake damage
-        if ((plr->hasBuff(ECSB_INFECTION))
-            && !(plr->iSpecialState & CN_SPECIAL_STATE_FLAG__INVULNERABLE))
-            dealGooDamage(sock, PC_MAXHEALTH(plr->level) * 3 / 20);
-
         // heal
         if (currTime - lastHealTime >= 4000 && !plr->inCombat && plr->HP < PC_MAXHEALTH(plr->level)) {
             if (currTime - lastHealTime - plr->healCooldown >= 4000) {
@@ -776,7 +784,10 @@ static void playerTick(CNServer *serv, time_t currTime) {
                     if (skill->drainType == SkillDrainType::PASSIVE) {
                         // apply passive buff
                         drainRate = skill->batteryUse[boost * 3];
-                        Abilities::usePassiveNanoSkill(skill, plr, boost * 3);
+                        if(Abilities::usePassiveNanoSkill(skill, plr, boost * 3)) {
+                            // first buff, send back skill use packet(s)
+                            // TODO
+                        }
                     }
                 }
 
@@ -812,9 +823,8 @@ static void playerTick(CNServer *serv, time_t currTime) {
         // process buffsets
         auto it = plr->buffs.begin();
         while(it != plr->buffs.end()) {
-            int buffId = (*it).first;
             Buff* buff = (*it).second;
-            buff->tick();
+            buff->tick(currTime);
             if(buff->isStale()) {
                 // garbage collect
                 it = plr->buffs.erase(it);

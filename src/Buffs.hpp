@@ -2,13 +2,15 @@
 
 #include "core/Core.hpp"
 
-#include "Entities.hpp"
+#include "EntityRef.hpp"
 
 #include <vector>
 #include <functional>
 
 /* forward declaration(s) */
-struct BuffStack;
+class Buff;
+template<class... Types>
+using BuffCallback = std::function<void(EntityRef, Buff*, Types...)>;
 
 #define CSB_FROM_ECSB(x) (1 << (x - 1))
 
@@ -22,24 +24,19 @@ enum class BuffClass {
 	CASH_ITEM = ETBT_CASHITEM
 };
 
-typedef std::function<void(EntityRef, BuffStack*)> BuffCallback;
+enum class BuffValueSelector {
+    MAX_VALUE,
+    MIN_VALUE,
+    MAX_MAGNITUDE,
+    MIN_MAGNITUDE,
+    NET_TOTAL
+};
 
 struct BuffStack {
     int durationTicks;
     int value;
     EntityRef source;
     BuffClass buffStackClass;
-
-    /* called just before the stack is added */
-    BuffCallback onApply;
-
-    /* called when the stack is ticked */
-    BuffCallback onTick;
-
-    /* called just after the stack is removed */
-    BuffCallback onExpire;
-
-    Buff* buff;
 };
 
 class Buff {
@@ -49,8 +46,12 @@ private:
 
 public:
     int id;
+    /* called just after a stack is added or removed */
+    BuffCallback<int, BuffStack*> onUpdate;
+    /* called when the buff is ticked */
+    BuffCallback<time_t> onTick;
 
-    void tick();
+    void tick(time_t);
     void clear();
     void addStack(BuffStack* stack);
 
@@ -62,6 +63,8 @@ public:
     bool hasClass(BuffClass buffClass);
     BuffClass maxClass();
 
+    int getValue(BuffValueSelector selector);
+
     /* 
      * In general, a Buff object won't exist
      * unless it has stacks. However, when
@@ -71,13 +74,15 @@ public:
      */
     bool isStale();
 
-    Buff(int iid, EntityRef pSelf, BuffStack* firstStack)
-        : id(iid), self(pSelf) {
+    void updateCallbacks(BuffCallback<int, BuffStack*> fOnUpdate, BuffCallback<time_t> fonTick);
+
+    Buff(int iid, EntityRef pSelf, BuffCallback<int, BuffStack*> fOnUpdate, BuffCallback<time_t> fOnTick, BuffStack* firstStack)
+        : self(pSelf), id(iid), onUpdate(fOnUpdate), onTick(fOnTick) {
         addStack(firstStack);
     }
 };
 
 namespace Buffs {
-    void timeBuffUpdate(EntityRef self, BuffStack* stack, int status);
-    void timeBuffTimeoutViewable(EntityRef self, BuffStack* stack, int ct);
+    void timeBuffUpdate(EntityRef self, Buff* buff, int status, BuffStack* stack);
+    //void timeBuffTimeoutViewable(EntityRef self, Buff* buff, int ct);
 }

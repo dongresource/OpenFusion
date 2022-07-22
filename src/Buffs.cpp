@@ -4,19 +4,16 @@
 
 using namespace Buffs;
 
-void Buff::tick() {
+void Buff::tick(time_t currTime) {
     auto it = stacks.begin();
     while(it != stacks.end()) {
         BuffStack& stack = *it;
-        if(stack.onTick) stack.onTick(self, &stack);
+        if(onTick) onTick(self, this, currTime);
 
         if(stack.durationTicks == 0) {
-            // erase() destroys the callbacks
-            // with the stack struct, so we need
-            // to copy it first.
             BuffStack deadStack = stack;
             it = stacks.erase(it);
-            if(deadStack.onExpire) deadStack.onExpire(self, &deadStack);
+            if(onUpdate) onUpdate(self, this, ETBU_DEL, &deadStack);
         } else {
             if(stack.durationTicks > 0) stack.durationTicks--;
             it++;
@@ -28,15 +25,13 @@ void Buff::clear() {
     while(!stacks.empty()) {
         BuffStack stack = stacks.back();
         stacks.pop_back();
-        if(stack.onExpire) stack.onExpire(self, &stack);
+        if(onUpdate) onUpdate(self, this, ETBU_DEL, &stack);
     }
 }
 
 void Buff::addStack(BuffStack* stack) {
-    BuffStack newStack = *stack;
-    newStack.buff = this;
-    if(newStack.onApply) newStack.onApply(self, &newStack);
-    stacks.push_back(newStack);
+    stacks.push_back(*stack);
+    if(onUpdate) onUpdate(self, this, ETBU_ADD, &stacks.back());
 }
 
 bool Buff::hasClass(BuffClass buffClass) {
@@ -56,34 +51,68 @@ BuffClass Buff::maxClass() {
     return buffClass;
 }
 
+int Buff::getValue(BuffValueSelector selector) {
+    if(isStale()) return 0;
+
+    int value = selector == BuffValueSelector::NET_TOTAL ? 0 : stacks.front().value;
+    for(BuffStack& stack : stacks) {
+        switch(selector)
+        {
+            case BuffValueSelector::NET_TOTAL:
+                value += stack.value;
+                break;
+            case BuffValueSelector::MIN_VALUE:
+                if(stack.value < value) value = stack.value;
+                break;
+            case BuffValueSelector::MAX_VALUE:
+                if(stack.value > value) value = stack.value;
+                break;
+            case BuffValueSelector::MIN_MAGNITUDE:
+                if(abs(stack.value) < abs(value)) value = stack.value;
+                break;
+            case BuffValueSelector::MAX_MAGNITUDE:
+            default:
+                if(abs(stack.value) > abs(value)) value = stack.value;
+        }
+    }
+    return value;
+}
+
 bool Buff::isStale() {
     return stacks.empty();
 }
 
+/* This will practically never do anything important, but it's here just in case */
+void Buff::updateCallbacks(BuffCallback<int, BuffStack*> fOnUpdate, BuffCallback<time_t> fonTick) {
+    if(!onUpdate) onUpdate = fOnUpdate;
+    if(!onTick) onTick = fonTick;
+}
+
 #pragma region Handlers
-void Buffs::timeBuffUpdate(EntityRef self, BuffStack* stack, int status) {
+void Buffs::timeBuffUpdate(EntityRef self, Buff* buff, int status, BuffStack* stack) {
 
     if(self.kind != EntityKind::PLAYER)
         return; // not implemented
     
     Player* plr = (Player*)self.getEntity();
     if(plr == nullptr)
-        return;
+        return; // sanity check
 
-    if(status == ETBU_DEL && plr->hasBuff(stack->buff->id))
-        return; // no premature status removal!
-
-    sTimeBuff payload{};
+    if(status == ETBU_DEL && !buff->isStale())
+        return; // no premature effect deletion
 
     int cbf = plr->getCompositeCondition();
+    sTimeBuff payload{};
     if(status == ETBU_ADD) {
-        if(stack->buff->id > 0) cbf |= CSB_FROM_ECSB(stack->buff->id);
-        payload.iValue = stack->value;
-        //payload.iTimeLimit = stack->durationTicks * MS_PER_PLAYER_TICK;
+        payload.iValue = buff->getValue(BuffValueSelector::MAX_MAGNITUDE);
+        // we need to explicitly add the ECSB for this buff,
+        // in case this is the first stack in and the entry
+        // in the buff map doesn't yet exist
+        if(buff->id > 0) cbf |= CSB_FROM_ECSB(buff->id);
     }
     
     INITSTRUCT(sP_FE2CL_PC_BUFF_UPDATE, pkt);
-    pkt.eCSTB = stack->buff->id; // eCharStatusTimeBuffID
+    pkt.eCSTB = buff->id; // eCharStatusTimeBuffID
     pkt.eTBU = status; // eTimeBuffUpdate
     pkt.eTBT = (int)stack->buffStackClass;
     pkt.iConditionBitFlag = cbf;
@@ -91,20 +120,15 @@ void Buffs::timeBuffUpdate(EntityRef self, BuffStack* stack, int status) {
     self.sock->sendPacket((void*)&pkt, P_FE2CL_PC_BUFF_UPDATE, sizeof(sP_FE2CL_PC_BUFF_UPDATE));
 }
 
-void Buffs::timeBuffTimeoutViewable(EntityRef self, BuffStack* stack, int ct) {
-    if(self.kind != EntityKind::PLAYER)
-        return; // not implemented
-    
-    Player* plr = (Player*)self.getEntity();
-    if(plr == nullptr)
-        return;
-
+/*
+void Buffs::timeBuffTimeoutViewable(EntityRef self, Buff* buff, int ct) {
     INITSTRUCT(sP_FE2CL_CHAR_TIME_BUFF_TIME_OUT, pkt); // send a buff timeout to other players
     pkt.eCT = ct; // 1 for eggs, at least
     pkt.iID = plr->iID;
     pkt.iConditionBitFlag = plr->getCompositeCondition();
     PlayerManager::sendToViewable(self.sock, pkt, P_FE2CL_CHAR_TIME_BUFF_TIME_OUT);
 }
+*/
 
 /* MOVE TO EGG LAMBDA
 void Buffs::timeBuffTimeout(EntityRef self, BuffStack* buff) {

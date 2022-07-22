@@ -3,22 +3,16 @@
 #include "core/Core.hpp"
 #include "Chunking.hpp"
 
+#include "EntityRef.hpp"
+#include "Buffs.hpp"
+
 #include <set>
 #include <map>
+#include <functional>
 
 /* forward declaration(s) */
-class Buff;
-struct BuffStack;
-
-enum EntityKind {
-    INVALID,
-    PLAYER,
-    SIMPLE_NPC,
-    COMBAT_NPC,
-    MOB,
-    EGG,
-    BUS
-};
+class Chunk;
+struct Group;
 
 enum class AIState {
     INACTIVE,
@@ -27,9 +21,6 @@ enum class AIState {
     RETREAT,
     DEAD
 };
-
-class Chunk;
-struct Group;
 
 struct Entity {
     EntityKind kind = EntityKind::INVALID;
@@ -48,42 +39,6 @@ struct Entity {
     virtual void disappearFromViewOf(CNSocket *sock) = 0;
 };
 
-struct EntityRef {
-    EntityKind kind;
-    union {
-        CNSocket *sock;
-        int32_t id;
-    };
-
-    EntityRef(CNSocket *s);
-    EntityRef(int32_t i);
-
-    bool isValid() const;
-    Entity *getEntity() const;
-
-    bool operator==(const EntityRef& other) const {
-        if (kind != other.kind)
-            return false;
-
-        if (kind == EntityKind::PLAYER)
-            return sock == other.sock;
-
-        return id == other.id;
-    }
-
-    // arbitrary ordering
-    bool operator<(const EntityRef& other) const {
-        if (kind == other.kind) {
-            if (kind == EntityKind::PLAYER)
-                return sock < other.sock;
-            else
-                return id < other.id;
-        }
-
-        return kind < other.kind;
-    }
-};
-
 /*
  * Interfaces
  */
@@ -92,10 +47,10 @@ public:
     ICombatant() {}
     virtual ~ICombatant() {}
 
-    virtual void addBuff(int buffId, BuffStack* stack) = 0;
-    virtual Buff* getBuff(int buffId) = 0;
-    virtual void removeBuff(int buffId) = 0;
-    virtual bool hasBuff(int buffId) = 0;
+    virtual bool addBuff(int, BuffCallback<int, BuffStack*>, BuffCallback<time_t>, BuffStack*) = 0;
+    virtual Buff* getBuff(int) = 0;
+    virtual void removeBuff(int) = 0;
+    virtual bool hasBuff(int) = 0;
     virtual int getCompositeCondition() = 0;
     virtual int takeDamage(EntityRef, int) = 0;
     virtual void heal(EntityRef, int) = 0;
@@ -159,7 +114,7 @@ struct CombatNPC : public BaseNPC, public ICombatant {
 
     virtual bool isExtant() override { return hp > 0; }
 
-    virtual void addBuff(int buffId, BuffStack* stack) override;
+    virtual bool addBuff(int buffId, BuffCallback<int, BuffStack*> onUpdate, BuffCallback<time_t> onTick, BuffStack* stack) override;
     virtual Buff* getBuff(int buffId) override;
     virtual void removeBuff(int buffId) override;
     virtual bool hasBuff(int buffId) override;

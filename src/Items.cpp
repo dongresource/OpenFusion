@@ -494,18 +494,18 @@ static void itemUseHandler(CNSocket* sock, CNPacketData* data) {
     int durationMilliseconds = Abilities::SkillTable[144].durationTime[0] * 100;
     BuffStack gumballBuff = {
         durationMilliseconds / MS_PER_PLAYER_TICK,
-        NULL,
+        0,
         sock,
-        BuffClass::CASH_ITEM, // or BuffClass::ITEM?
-        [](EntityRef host, BuffStack* stack)  {
-            Buffs::timeBuffUpdate(host, stack, ETBU_ADD);
-        },
-        nullptr,
-        [](EntityRef host, BuffStack* stack)  {
-            Buffs::timeBuffUpdate(host, stack, ETBU_DEL);
-        }
+        BuffClass::CASH_ITEM // or BuffClass::ITEM?
     };
-    player->addBuff(eCSB, &gumballBuff);
+    player->addBuff(eCSB,
+        [](EntityRef self, Buff* buff, int status, BuffStack* stack) {
+            Buffs::timeBuffUpdate(self, buff, status, stack);
+        },
+        [](EntityRef self, Buff* buff, time_t currTime) {
+            // TODO passive tick
+        },
+        &gumballBuff);
 
     sock->sendPacket((void*)&respbuf, P_FE2CL_REP_PC_ITEM_USE_SUCC, resplen);
     // update inventory serverside

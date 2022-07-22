@@ -208,10 +208,6 @@ static void nanoEquipHandler(CNSocket* sock, CNPacketData* data) {
     // Update player
     plr->equippedNanos[nano->iNanoSlotNum] = nano->iNanoID;
 
-    // Unbuff gumballs
-    int buffId = ECSB_STIMPAKSLOT1 + nano->iNanoSlotNum;
-    plr->removeBuff(buffId);
-
     // unsummon nano if replaced
     if (plr->activeNano == plr->equippedNanos[nano->iNanoSlotNum])
         summonNano(sock, -1);

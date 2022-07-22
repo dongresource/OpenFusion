@@ -104,8 +104,10 @@ int Abilities::getCSTBFromST(int eSkillType) {
 }
 
 #pragma region Skill Handlers
-void Abilities::usePassiveNanoSkill(SkillData* skill, Player* plr, int boost) {
+bool Abilities::usePassiveNanoSkill(SkillData* skill, Player* plr, int boost) {
     assert(skill->drainType == SkillDrainType::PASSIVE);
+
+    bool newBuffApplied = false;
 
     EntityRef self = PlayerManager::getSockFromID(plr->iID);
     std::vector<EntityRef> targets;
@@ -126,14 +128,6 @@ void Abilities::usePassiveNanoSkill(SkillData* skill, Player* plr, int boost) {
         value,
         self,
         BuffClass::NONE, // overwritten per target
-        [](EntityRef host, BuffStack* stack)  {
-            Buffs::timeBuffUpdate(host, stack, ETBU_ADD);
-            // TODO SKILLUSE/SKILLUSESUCC, sSkillResult_Buff
-        },
-        nullptr,
-        [](EntityRef host, BuffStack* stack)  {
-            Buffs::timeBuffUpdate(host, stack, ETBU_DEL);
-        }
     };
 
     for (EntityRef target : targets) {
@@ -143,8 +137,17 @@ void Abilities::usePassiveNanoSkill(SkillData* skill, Player* plr, int boost) {
 
         passiveBuff.buffStackClass = target == self ? BuffClass::NANO : BuffClass::GROUP_NANO;
         ICombatant* combatant = dynamic_cast<ICombatant*>(entity);
-        combatant->addBuff(timeBuffId, &passiveBuff);
+        newBuffApplied |= combatant->addBuff(timeBuffId,
+            [](EntityRef self, Buff* buff, int status, BuffStack* stack) {
+                Buffs::timeBuffUpdate(self, buff, status, stack);
+            },
+            [](EntityRef self, Buff* buff, time_t currTime) {
+                // TODO time buff tick
+            },
+            &passiveBuff);
     }
+
+    return newBuffApplied;
 }
 #pragma endregion
 
