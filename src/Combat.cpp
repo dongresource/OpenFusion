@@ -19,6 +19,7 @@ using namespace Combat;
 /// Player Id -> Bullet Id -> Bullet
 std::map<int32_t, std::map<int8_t, Bullet>> Combat::Bullets;
 
+#pragma region Player
 bool Player::addBuff(int buffId, BuffCallback<int, BuffStack*> onUpdate, BuffCallback<time_t> onTick, BuffStack* stack) {
     EntityRef self = PlayerManager::getSockFromID(iID);
 
@@ -87,6 +88,10 @@ std::vector<EntityRef> Player::getGroupMembers() {
     return members;
 }
 
+int32_t Player::getCharType() {
+    return 1; // eCharType (eCT_PC)
+}
+
 int32_t Player::getID() {
     return iID;
 }
@@ -94,7 +99,9 @@ int32_t Player::getID() {
 void Player::step(time_t currTime) {
     // no-op
 }
+#pragma endregion
 
+#pragma region CombatNPC
 bool CombatNPC::addBuff(int buffId, BuffCallback<int, BuffStack*> onUpdate, BuffCallback<time_t> onTick, BuffStack* stack) { /* stubbed */
     return false;
 }
@@ -143,6 +150,12 @@ std::vector<EntityRef> CombatNPC::getGroupMembers() {
     return members;
 }
 
+int32_t CombatNPC::getCharType() {
+    if(kind == EntityKind::MOB)
+        return 4; // eCharType (eCT_MOB)
+    return 2; // eCharType (eCT_NPC)
+}
+
 int32_t CombatNPC::getID() {
     return id;
 }
@@ -172,6 +185,7 @@ void CombatNPC::transition(AIState newState, EntityRef src) {
             event.handler(src, this);
     */
 }
+#pragma endregion
 
 static std::pair<int,int> getDamage(int attackPower, int defensePower, bool shouldCrit,
                                          bool batteryBoost, int attackerStyle,
@@ -784,10 +798,7 @@ static void playerTick(CNServer *serv, time_t currTime) {
                     if (skill->drainType == SkillDrainType::PASSIVE) {
                         // apply passive buff
                         drainRate = skill->batteryUse[boost * 3];
-                        if(Abilities::usePassiveNanoSkill(skill, plr, boost * 3)) {
-                            // first buff, send back skill use packet(s)
-                            // TODO
-                        }
+                        Abilities::usePassiveNanoSkill(skill, plr);
                     }
                 }
 

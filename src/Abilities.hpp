@@ -1,10 +1,14 @@
 #pragma once
 
+#include "core/Core.hpp"
+
 #include "Entities.hpp"
 #include "Player.hpp"
 
 #include <map>
 #include <vector>
+
+constexpr size_t MAX_SKILLRESULT_SIZE = sizeof(sSkillResult_BatteryDrain);
 
 enum class SkillEffectTarget {
     POINT = 1,
@@ -26,6 +30,15 @@ enum class SkillDrainType {
     PASSIVE = 2
 };
 
+struct SkillResult {
+    size_t size;
+    char payload[MAX_SKILLRESULT_SIZE];
+    SkillResult(size_t len, void* dat) {
+        size = len;
+        memcpy(payload, dat, len);
+    }
+};
+
 struct SkillData {
     int skillType; // eST
     SkillEffectTarget effectTarget;
@@ -44,10 +57,11 @@ struct SkillData {
 namespace Abilities {
     extern std::map<int32_t, SkillData> SkillTable;
 
+    void broadcastNanoSkill(CNSocket*, sNano&, std::vector<ICombatant*>);
     std::vector<EntityRef> matchTargets(SkillData*, int, int32_t*);
     int getCSTBFromST(int eSkillType);
 
-    bool usePassiveNanoSkill(SkillData*, Player*, int);
+    std::vector<ICombatant*> usePassiveNanoSkill(SkillData*, Player*);
 
     void init();
 }

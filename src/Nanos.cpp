@@ -86,10 +86,17 @@ void Nanos::summonNano(CNSocket *sock, int slot, bool silent) {
         return; // sanity check
 
     plr->activeNano = nanoID;
+    sNano& nano = plr->Nanos[nanoID];
 
-    int16_t skillID = plr->Nanos[nanoID].iSkillID;
-    if (Abilities::SkillTable.count(skillID) > 0 && Abilities::SkillTable[skillID].drainType == SkillDrainType::PASSIVE)
-        resp.eCSTB___Add = 1; // passive buff effect
+    SkillData* skill = Abilities::SkillTable.count(nano.iSkillID) > 0
+                        ? &Abilities::SkillTable[nano.iSkillID] : nullptr;
+    if (slot != -1 && skill != nullptr && skill->drainType == SkillDrainType::PASSIVE) {
+        // passive buff effect
+        resp.eCSTB___Add = 1;
+        int boost = Nanos::getNanoBoost(plr);
+        std::vector<ICombatant*> affectedCombatants = Abilities::usePassiveNanoSkill(skill, plr);
+        if(!affectedCombatants.empty()) Abilities::broadcastNanoSkill(sock, nano, affectedCombatants);
+    }
 
     if (!silent) // silent nano death but only for the summoning player
         sock->sendPacket(resp, P_FE2CL_REP_NANO_ACTIVE_SUCC);
@@ -97,7 +104,7 @@ void Nanos::summonNano(CNSocket *sock, int slot, bool silent) {
     // Send to other players, these players can't handle silent nano deaths so this packet needs to be sent.
     INITSTRUCT(sP_FE2CL_NANO_ACTIVE, pkt1);
     pkt1.iPC_ID = plr->iID;
-    pkt1.Nano = plr->Nanos[nanoID];
+    pkt1.Nano = nano;
     PlayerManager::sendToViewable(sock, pkt1, P_FE2CL_NANO_ACTIVE);
 }
 

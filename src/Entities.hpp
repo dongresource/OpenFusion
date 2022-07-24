@@ -57,6 +57,7 @@ public:
     virtual bool isAlive() = 0;
     virtual int getCurrentHP() = 0;
     virtual std::vector<EntityRef> getGroupMembers() = 0;
+    virtual int32_t getCharType() = 0;
     virtual int32_t getID() = 0;
     virtual void step(time_t currTime) = 0;
 };
@@ -74,6 +75,7 @@ public:
     bool loopingPath = false;
 
     BaseNPC(int _A, uint64_t iID, int t, int _id) {
+        kind = EntityKind::SIMPLE_NPC;
         type = t;
         hp = 400;
         angle = _A;
@@ -108,6 +110,8 @@ struct CombatNPC : public BaseNPC, public ICombatant {
         spawnY = y;
         spawnZ = z;
 
+        kind = EntityKind::COMBAT_NPC;
+
         stateHandlers[AIState::INACTIVE] = {};
         transitionHandlers[AIState::INACTIVE] = {};
     }
@@ -124,6 +128,7 @@ struct CombatNPC : public BaseNPC, public ICombatant {
     virtual bool isAlive() override;
     virtual int getCurrentHP() override;
     virtual std::vector<EntityRef> getGroupMembers() override;
+    virtual int32_t getCharType() override;
     virtual int32_t getID() override;
     virtual void step(time_t currTime) override;
 
