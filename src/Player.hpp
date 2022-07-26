@@ -95,14 +95,18 @@ struct Player : public Entity, public ICombatant {
     virtual bool hasBuff(int buffId) override;
     virtual int getCompositeCondition() override;
     virtual int takeDamage(EntityRef src, int amt) override;
-    virtual void heal(EntityRef src, int amt) override;
+    virtual int heal(EntityRef src, int amt) override;
     virtual bool isAlive() override;
     virtual int getCurrentHP() override;
+    virtual int getMaxHP() override;
+    virtual int getLevel() override;
     virtual std::vector<EntityRef> getGroupMembers() override;
     virtual int32_t getCharType() override;
     virtual int32_t getID() override;
+    virtual EntityRef getRef() override;
 
     virtual void step(time_t currTime) override;
 
+    sNano* getActiveNano();
     sPCAppearanceData getAppearanceData();
 };

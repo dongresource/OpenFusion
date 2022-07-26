@@ -63,12 +63,19 @@ int Player::getCompositeCondition() {
 }
 
 int Player::takeDamage(EntityRef src, int amt) {
-    HP -= amt;
-    return amt;
+    int dmg = amt;
+    if(HP - dmg < 0) dmg = HP;
+    HP -= dmg;
+
+    return dmg;
 }
 
-void Player::heal(EntityRef src, int amt) {
-    // stubbed
+int Player::heal(EntityRef src, int amt) {
+    int heal = amt;
+    if(HP + heal > getMaxHP()) heal = getMaxHP() - HP;
+    HP += heal;
+
+    return heal;
 }
 
 bool Player::isAlive() {
@@ -77,6 +84,14 @@ bool Player::isAlive() {
 
 int Player::getCurrentHP() {
     return HP;
+}
+
+int Player::getMaxHP() {
+    return PC_MAXHEALTH(level);
+}
+
+int Player::getLevel() {
+    return level;
 }
 
 std::vector<EntityRef> Player::getGroupMembers() {
@@ -94,6 +109,10 @@ int32_t Player::getCharType() {
 
 int32_t Player::getID() {
     return iID;
+}
+
+EntityRef Player::getRef() {
+    return EntityRef(PlayerManager::getSockFromID(iID));
 }
 
 void Player::step(time_t currTime) {
@@ -121,16 +140,21 @@ int CombatNPC::getCompositeCondition() { /* stubbed */
 }
 
 int CombatNPC::takeDamage(EntityRef src, int amt) {
+    int dmg = amt;
+    if(hp - dmg < 0) dmg = hp;
+    hp -= dmg;
 
-    hp -= amt;
-    if (hp <= 0)
-        transition(AIState::DEAD, src);
+    if(hp <= 0) transition(AIState::DEAD, src);
 
-    return amt;
+    return dmg;
 }
 
-void CombatNPC::heal(EntityRef src, int amt) {
-    // stubbed
+int CombatNPC::heal(EntityRef src, int amt) {
+    int heal = amt;
+    if(hp + heal > getMaxHP()) heal = getMaxHP() - hp;
+    hp += heal;
+
+    return heal;
 }
 
 bool CombatNPC::isAlive() {
@@ -139,6 +163,14 @@ bool CombatNPC::isAlive() {
 
 int CombatNPC::getCurrentHP() {
     return hp;
+}
+
+int CombatNPC::getMaxHP() {
+    return maxHealth;
+}
+
+int CombatNPC::getLevel() {
+    return level;
 }
 
 std::vector<EntityRef> CombatNPC::getGroupMembers() {
@@ -158,6 +190,10 @@ int32_t CombatNPC::getCharType() {
 
 int32_t CombatNPC::getID() {
     return id;
+}
+
+EntityRef CombatNPC::getRef() {
+    return EntityRef(id);
 }
 
 void CombatNPC::step(time_t currTime) {

@@ -32,10 +32,13 @@ enum class SkillDrainType {
 
 struct SkillResult {
     size_t size;
-    char payload[MAX_SKILLRESULT_SIZE];
+    uint8_t payload[MAX_SKILLRESULT_SIZE];
     SkillResult(size_t len, void* dat) {
         size = len;
         memcpy(payload, dat, len);
+    }
+    SkillResult() {
+        size = 0;
     }
 };
 

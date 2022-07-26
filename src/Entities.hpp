@@ -53,12 +53,15 @@ public:
     virtual bool hasBuff(int) = 0;
     virtual int getCompositeCondition() = 0;
     virtual int takeDamage(EntityRef, int) = 0;
-    virtual void heal(EntityRef, int) = 0;
+    virtual int heal(EntityRef, int) = 0;
     virtual bool isAlive() = 0;
     virtual int getCurrentHP() = 0;
+    virtual int getMaxHP() = 0;
+    virtual int getLevel() = 0;
     virtual std::vector<EntityRef> getGroupMembers() = 0;
     virtual int32_t getCharType() = 0;
     virtual int32_t getID() = 0;
+    virtual EntityRef getRef() = 0;
     virtual void step(time_t currTime) = 0;
 };
 
@@ -124,12 +127,15 @@ struct CombatNPC : public BaseNPC, public ICombatant {
     virtual bool hasBuff(int buffId) override;
     virtual int getCompositeCondition() override;
     virtual int takeDamage(EntityRef src, int amt) override;
-    virtual void heal(EntityRef src, int amt) override;
+    virtual int heal(EntityRef src, int amt) override;
     virtual bool isAlive() override;
     virtual int getCurrentHP() override;
+    virtual int getMaxHP() override;
+    virtual int getLevel() override;
     virtual std::vector<EntityRef> getGroupMembers() override;
     virtual int32_t getCharType() override;
     virtual int32_t getID() override;
+    virtual EntityRef getRef() override;
     virtual void step(time_t currTime) override;
 
     virtual void transition(AIState newState, EntityRef src);
