@@ -14,7 +14,6 @@ namespace Eggs {
 
     void init();
 
-    /// returns -1 on fail
-    int eggBuffPlayer(CNSocket* sock, int skillId, int eggId, int duration);
+    void eggBuffPlayer(CNSocket* sock, int skillId, int eggId, int duration);
     void npcDataToEggData(int x, int y, int z, sNPCAppearanceData* npc, sShinyAppearanceData* egg);
 }

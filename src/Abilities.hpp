@@ -60,11 +60,9 @@ struct SkillData {
 namespace Abilities {
     extern std::map<int32_t, SkillData> SkillTable;
 
-    void broadcastNanoSkill(CNSocket*, sNano&, std::vector<ICombatant*>);
+    void useNanoSkill(CNSocket*, sNano&, std::vector<ICombatant*>);
+    void useNPCSkill(EntityRef, int skillID, std::vector<ICombatant*>);
+
     std::vector<EntityRef> matchTargets(SkillData*, int, int32_t*);
     int getCSTBFromST(int eSkillType);
-
-    std::vector<ICombatant*> usePassiveNanoSkill(SkillData*, Player*);
-
-    void init();
 }

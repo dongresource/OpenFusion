@@ -503,7 +503,7 @@ static void itemUseHandler(CNSocket* sock, CNPacketData* data) {
             Buffs::timeBuffUpdate(self, buff, status, stack);
         },
         [](EntityRef self, Buff* buff, time_t currTime) {
-            // TODO passive tick
+            // no-op
         },
         &gumballBuff);
 

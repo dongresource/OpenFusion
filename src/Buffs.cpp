@@ -1,6 +1,7 @@
 #include "Buffs.hpp"
 
 #include "PlayerManager.hpp"
+#include "NPCManager.hpp"
 
 using namespace Buffs;
 
@@ -120,19 +121,15 @@ void Buffs::timeBuffUpdate(EntityRef self, Buff* buff, int status, BuffStack* st
     self.sock->sendPacket((void*)&pkt, P_FE2CL_PC_BUFF_UPDATE, sizeof(sP_FE2CL_PC_BUFF_UPDATE));
 }
 
-/*
-void Buffs::timeBuffTimeoutViewable(EntityRef self, Buff* buff, int ct) {
+void Buffs::timeBuffTimeout(EntityRef self) {
+    if(self.kind != EntityKind::PLAYER && self.kind != EntityKind::COMBAT_NPC && self.kind != EntityKind::MOB)
+        return; // not a combatant
+    Entity* entity = self.getEntity();
+    ICombatant* combatant = dynamic_cast<ICombatant*>(entity);
     INITSTRUCT(sP_FE2CL_CHAR_TIME_BUFF_TIME_OUT, pkt); // send a buff timeout to other players
-    pkt.eCT = ct; // 1 for eggs, at least
-    pkt.iID = plr->iID;
-    pkt.iConditionBitFlag = plr->getCompositeCondition();
-    PlayerManager::sendToViewable(self.sock, pkt, P_FE2CL_CHAR_TIME_BUFF_TIME_OUT);
+    pkt.eCT = combatant->getCharType();
+    pkt.iID = combatant->getID();
+    pkt.iConditionBitFlag = combatant->getCompositeCondition();
+    NPCManager::sendToViewable(entity, &pkt, P_FE2CL_CHAR_TIME_BUFF_TIME_OUT, sizeof(sP_FE2CL_CHAR_TIME_BUFF_TIME_OUT));
 }
-*/
-
-/* MOVE TO EGG LAMBDA
-void Buffs::timeBuffTimeout(EntityRef self, BuffStack* buff) {
-    timeBuffUpdate(self, buff, ETBU_DEL);
-    timeBuffTimeoutViewable(self);
-} */
 #pragma endregion

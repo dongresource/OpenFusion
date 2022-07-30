@@ -834,7 +834,7 @@ static void playerTick(CNServer *serv, time_t currTime) {
                     if (skill->drainType == SkillDrainType::PASSIVE) {
                         // apply passive buff
                         drainRate = skill->batteryUse[boost * 3];
-                        Abilities::usePassiveNanoSkill(skill, plr);
+                        Nanos::applyNanoBuff(skill, plr);
                     }
                 }
 

@@ -240,27 +240,11 @@ void Groups::groupTickInfo(Player* plr) {
     sendToGroup(plr->group, (void*)&respbuf, P_FE2CL_PC_GROUP_MEMBER_INFO, resplen);
 }
 
-static void groupUnbuff(Player* plr) {
-    Group* group = plr->group;
-    for (int i = 0; i < group->members.size(); i++) {
-        for (int n = 0; n < group->members.size(); n++) {
-            if (i == n)
-                continue;
-
-            EntityRef other = group->members[n];
-
-            // TODO ABILITIES
-            //Abilities::applyBuff(sock, otherPlr->Nanos[otherPlr->activeNano].iSkillID, 2, 1, 0);
-        }
-    }
-}
-
 void Groups::groupKick(Player* plr) {
     Group* group = plr->group;
 
     // if you are the group leader, destroy your own group and kick everybody
     if (plr->group->members[0] == PlayerManager::getSockFromID(plr->iID)) {
-        groupUnbuff(plr);
         INITSTRUCT(sP_FE2CL_PC_GROUP_LEAVE_SUCC, resp1);
         sendToGroup(plr->group, (void*)&resp1, P_FE2CL_PC_GROUP_LEAVE_SUCC, sizeof(sP_FE2CL_PC_GROUP_LEAVE_SUCC));
         disbandGroup(plr->group);

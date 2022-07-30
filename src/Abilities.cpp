@@ -40,7 +40,7 @@ static SkillResult handleSkillHealHP(SkillData* skill, int power, ICombatant* so
     sSkillResult_Heal_HP result{};
     result.eCT = target->getCharType();
     result.iID = target->getID();
-    result.iHealHP = heal;
+    result.iHealHP = healed;
     result.iHP = target->getCurrentHP();
     return SkillResult(sizeof(sSkillResult_Heal_HP), &result);
 }
@@ -170,7 +170,8 @@ static std::vector<SkillResult> handleSkill(SkillData* skill, int power, ICombat
     assert(skillHandler != nullptr);
 
     for(ICombatant* target : targets) {
-        SkillResult result = skillHandler(skill, power, src, target);
+        assert(target != nullptr);
+        SkillResult result = skillHandler(skill, power, src != nullptr ? src : target, target);
         if(result.size == 0) continue; // skill not applicable
         if(result.size != resultSize) {
             std::cout << "[WARN] bad skill result size for " << skill->skillType << " from " << (void*)handleSkillBuff << std::endl;
@@ -181,7 +182,14 @@ static std::vector<SkillResult> handleSkill(SkillData* skill, int power, ICombat
     return results;
 }
 
-void Abilities::broadcastNanoSkill(CNSocket* sock, sNano& nano, std::vector<ICombatant*> affected) {
+static void attachSkillResults(std::vector<SkillResult> results, size_t resultSize, uint8_t* pivot) {
+    for(SkillResult& result : results) {
+        memcpy(pivot, result.payload, resultSize);
+        pivot += resultSize;
+    }
+}
+
+void Abilities::useNanoSkill(CNSocket* sock, sNano& nano, std::vector<ICombatant*> affected) {
     if(SkillTable.count(nano.iSkillID) == 0)
         return;
 
@@ -210,14 +218,43 @@ void Abilities::broadcastNanoSkill(CNSocket* sock, sNano& nano, std::vector<ICom
     pkt->eST = skill->skillType;
     pkt->iTargetCnt = (int32_t)results.size();
 
-    uint8_t* appended = (uint8_t*)(pkt + 1);
-    for(SkillResult& result : results) {
-        memcpy(appended, result.payload, resultSize);
-        appended += resultSize;
-    }
-
+    attachSkillResults(results, resultSize, (uint8_t*)(pkt + 1));
     sock->sendPacket(pkt, P_FE2CL_NANO_SKILL_USE_SUCC, resplen);
     PlayerManager::sendToViewable(sock, pkt, P_FE2CL_NANO_SKILL_USE_SUCC, resplen);
+}
+
+void Abilities::useNPCSkill(EntityRef npc, int skillID, std::vector<ICombatant*> affected) {
+    if(SkillTable.count(skillID) == 0)
+        return;
+
+    Entity* entity = npc.getEntity();
+    ICombatant* src = nullptr;
+    if(npc.kind == EntityKind::COMBAT_NPC || npc.kind == EntityKind::MOB)
+        src = dynamic_cast<ICombatant*>(entity);
+    
+    SkillData* skill = &SkillTable[skillID];
+
+    std::vector<SkillResult> results = handleSkill(skill, 0, src, affected);
+    size_t resultSize = results.back().size; // guaranteed to be the same for every item
+
+    if (!validOutVarPacket(sizeof(sP_FE2CL_NPC_SKILL_HIT), results.size(), resultSize)) {
+        std::cout << "[WARN] bad sP_FE2CL_NPC_SKILL_HIT packet size\n";
+        return;
+    }
+
+    // initialize response struct
+    size_t resplen = sizeof(sP_FE2CL_NPC_SKILL_HIT) + results.size() * resultSize;
+    uint8_t respbuf[CN_PACKET_BUFFER_SIZE];
+    memset(respbuf, 0, resplen);
+
+    sP_FE2CL_NPC_SKILL_HIT* pkt = (sP_FE2CL_NPC_SKILL_HIT*)respbuf;
+    pkt->iNPC_ID = npc.id;
+    pkt->iSkillID = skillID;
+    pkt->eST = skill->skillType;
+    pkt->iTargetCnt = (int32_t)results.size();
+
+    attachSkillResults(results, resultSize, (uint8_t*)(pkt + 1));
+    NPCManager::sendToViewable(entity, pkt, P_FE2CL_NPC_SKILL_HIT, resplen);
 }
 
 std::vector<EntityRef> Abilities::matchTargets(SkillData* skill, int count, int32_t *ids) {
@@ -302,54 +339,4 @@ int Abilities::getCSTBFromST(int eSkillType) {
         break;
     }
     return result;
-}
-
-std::vector<ICombatant*> Abilities::usePassiveNanoSkill(SkillData* skill, Player* plr) {
-    assert(skill->drainType == SkillDrainType::PASSIVE);
-
-    EntityRef self = PlayerManager::getSockFromID(plr->iID);
-    std::vector<ICombatant*> affected;
-    std::vector<EntityRef> targets;
-    if (skill->targetType == SkillTargetType::GROUP) {
-        targets = plr->getGroupMembers(); // group
-    }
-    else if(skill->targetType == SkillTargetType::SELF) {
-        targets.push_back(self); // self
-    } else {
-        std::cout << "[WARN] Passive skill with type " << skill->skillType << " has target type MOB" << std::endl;
-    }
-
-    int timeBuffId = getCSTBFromST(skill->skillType);
-    int boost = Nanos::getNanoBoost(plr) ? 3 : 0;
-    int value = skill->values[0][boost];
-
-    BuffStack passiveBuff = {
-        1, // passive nano buffs refreshed every tick
-        value,
-        self,
-        BuffClass::NONE, // overwritten per target
-    };
-
-    for (EntityRef target : targets) {
-        Entity* entity = target.getEntity();
-        if (entity->kind != PLAYER && entity->kind != COMBAT_NPC && entity->kind != MOB)
-            continue; // not a combatant
-
-        passiveBuff.buffStackClass = target == self ? BuffClass::NANO : BuffClass::GROUP_NANO;
-        ICombatant* combatant = dynamic_cast<ICombatant*>(entity);
-        if(combatant->addBuff(timeBuffId,
-            [](EntityRef self, Buff* buff, int status, BuffStack* stack) {
-                Buffs::timeBuffUpdate(self, buff, status, stack);
-            },
-            [](EntityRef self, Buff* buff, time_t currTime) {
-                // TODO time buff tick
-            },
-            &passiveBuff)) affected.push_back(combatant);
-    }
-
-    return affected;
-}
-
-void Abilities::init() {
-    //REGISTER_SHARD_PACKET(P_CL2FE_REQ_PC_EMAIL_UPDATE_CHECK, emailUpdateCheck);
 }

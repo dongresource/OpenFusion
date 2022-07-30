@@ -84,5 +84,5 @@ public:
 
 namespace Buffs {
     void timeBuffUpdate(EntityRef self, Buff* buff, int status, BuffStack* stack);
-    //void timeBuffTimeoutViewable(EntityRef self, Buff* buff, int ct);
+    void timeBuffTimeout(EntityRef self);
 }
