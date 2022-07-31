@@ -9,7 +9,7 @@ void Buff::tick(time_t currTime) {
     auto it = stacks.begin();
     while(it != stacks.end()) {
         BuffStack& stack = *it;
-        if(onTick) onTick(self, this, currTime);
+        //if(onTick) onTick(self, this, currTime);
 
         if(stack.durationTicks == 0) {
             BuffStack deadStack = stack;
@@ -20,6 +20,10 @@ void Buff::tick(time_t currTime) {
             it++;
         }
     }
+}
+
+void Buff::combatTick(time_t currTime) {
+    if(onCombatTick) onCombatTick(self, this, currTime);
 }
 
 void Buff::clear() {
@@ -84,9 +88,9 @@ bool Buff::isStale() {
 }
 
 /* This will practically never do anything important, but it's here just in case */
-void Buff::updateCallbacks(BuffCallback<int, BuffStack*> fOnUpdate, BuffCallback<time_t> fonTick) {
+void Buff::updateCallbacks(BuffCallback<int, BuffStack*> fOnUpdate, BuffCallback<time_t> fOnCombatTick) {
     if(!onUpdate) onUpdate = fOnUpdate;
-    if(!onTick) onTick = fonTick;
+    if(!onCombatTick) onCombatTick = fOnCombatTick;
 }
 
 #pragma region Handlers

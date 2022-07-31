@@ -48,10 +48,11 @@ public:
     int id;
     /* called just after a stack is added or removed */
     BuffCallback<int, BuffStack*> onUpdate;
-    /* called when the buff is ticked */
-    BuffCallback<time_t> onTick;
+    /* called when the buff is combat-ticked */
+    BuffCallback<time_t> onCombatTick;
 
     void tick(time_t);
+    void combatTick(time_t);
     void clear();
     void addStack(BuffStack* stack);
 
@@ -76,8 +77,8 @@ public:
 
     void updateCallbacks(BuffCallback<int, BuffStack*> fOnUpdate, BuffCallback<time_t> fonTick);
 
-    Buff(int iid, EntityRef pSelf, BuffCallback<int, BuffStack*> fOnUpdate, BuffCallback<time_t> fOnTick, BuffStack* firstStack)
-        : self(pSelf), id(iid), onUpdate(fOnUpdate), onTick(fOnTick) {
+    Buff(int iid, EntityRef pSelf, BuffCallback<int, BuffStack*> fOnUpdate, BuffCallback<time_t> fOnCombatTick, BuffStack* firstStack)
+        : self(pSelf), id(iid), onUpdate(fOnUpdate), onCombatTick(fOnCombatTick) {
         addStack(firstStack);
     }
 };

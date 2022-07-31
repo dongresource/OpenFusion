@@ -116,7 +116,37 @@ EntityRef Player::getRef() {
 }
 
 void Player::step(time_t currTime) {
-    // no-op
+    CNSocket* sock = getRef().sock;
+
+    // nanos
+    for (int i = 0; i < 3; i++) {
+        if (activeNano != 0 && equippedNanos[i] == activeNano) { // tick active nano
+            sNano& nano = Nanos[activeNano];
+            int drainRate = 0;
+
+            if (Abilities::SkillTable.find(nano.iSkillID) != Abilities::SkillTable.end()) {
+                // nano has skill data
+                SkillData* skill = &Abilities::SkillTable[nano.iSkillID];
+                int boost = Nanos::getNanoBoost(this);
+                if (skill->drainType == SkillDrainType::PASSIVE)
+                    drainRate = skill->batteryUse[boost * 3];
+            }
+
+            nano.iStamina -= 1 + drainRate / 5;
+            if (nano.iStamina <= 0)
+                Nanos::summonNano(sock, -1, true); // unsummon nano silently
+
+        } else if (Nanos[equippedNanos[i]].iStamina < 150) { // tick resting nano
+            sNano& nano = Nanos[equippedNanos[i]];
+            if (nano.iStamina < 150)
+                nano.iStamina += 1;
+        }
+    }
+
+    // buffs
+    for(auto buffEntry : buffs) {
+        buffEntry.second->combatTick(currTime);
+    }
 }
 #pragma endregion
 
@@ -794,6 +824,7 @@ static void projectileHit(CNSocket* sock, CNPacketData* data) {
 
 static void playerTick(CNServer *serv, time_t currTime) {
     static time_t lastHealTime = 0;
+    static time_t lastCombatTIme = 0;
 
     for (auto& pair : PlayerManager::players) {
         CNSocket *sock = pair.first;
@@ -819,39 +850,21 @@ static void playerTick(CNServer *serv, time_t currTime) {
                 plr->healCooldown -= 4000;
         }
 
+        // combat tick
+        if(currTime - lastCombatTIme >= 2000) {
+            plr->step(currTime);
+            transmit = true;
+        }
+
         // nanos
-        for (int i = 0; i < 3; i++) {
-            if (plr->activeNano != 0 && plr->equippedNanos[i] == plr->activeNano) { // tick active nano
-                sNano& nano = plr->Nanos[plr->activeNano];
-                int drainRate = 0;
-
-                if (Abilities::SkillTable.find(nano.iSkillID) != Abilities::SkillTable.end()) {
-                    // nano has skill data
-                    SkillData* skill = &Abilities::SkillTable[nano.iSkillID];
-                    int boost = Nanos::getNanoBoost(plr);
-                    std::cout << "[SKILL] id " << nano.iSkillID << ", type " << skill->skillType << ", target " << (int)skill->targetType << std::endl;
-
-                    if (skill->drainType == SkillDrainType::PASSIVE) {
-                        // apply passive buff
-                        drainRate = skill->batteryUse[boost * 3];
-                        Nanos::applyNanoBuff(skill, plr);
-                    }
-                }
-
-                nano.iStamina -= 1 + drainRate / 5;
-
-                if (nano.iStamina <= 0)
-                    Nanos::summonNano(sock, -1, true); // unsummon nano silently
-
-                transmit = true;
-            } else if (plr->Nanos[plr->equippedNanos[i]].iStamina < 150) { // tick resting nano
-                sNano& nano = plr->Nanos[plr->equippedNanos[i]];
-                nano.iStamina += 1;
-
-                if (nano.iStamina > 150)
-                    nano.iStamina = 150;
-
-                transmit = true;
+        if (plr->activeNano != 0) { // tick active nano
+            sNano* nano = plr->getActiveNano();
+            if (Abilities::SkillTable.find(nano->iSkillID) != Abilities::SkillTable.end()) {
+                // nano has skill data
+                SkillData* skill = &Abilities::SkillTable[nano->iSkillID];
+                if (skill->drainType == SkillDrainType::PASSIVE)
+                    Nanos::applyNanoBuff(skill, plr);
+                // ^ composite condition calculation is separate from combat for responsiveness
             }
         }
 
@@ -879,7 +892,6 @@ static void playerTick(CNServer *serv, time_t currTime) {
             }
             else it++;
         }
-        //
 
         if (transmit) {
             INITSTRUCT(sP_FE2CL_REP_PC_TICK, pkt);
@@ -895,9 +907,11 @@ static void playerTick(CNServer *serv, time_t currTime) {
         }
     }
 
-    // if this was a heal tick, update the counter outside of the loop
+    // if this was a heal/combat tick, update the counters outside of the loop
     if (currTime - lastHealTime >= 4000)
         lastHealTime = currTime;
+    if(currTime - lastCombatTIme >= 2000)
+        lastCombatTIme = currTime;
 }
 
 void Combat::init() {
