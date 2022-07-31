@@ -139,7 +139,6 @@ void Nanos::summonNano(CNSocket *sock, int slot, bool silent) {
     if (slot != -1 && skill != nullptr && skill->drainType == SkillDrainType::PASSIVE) {
         // passive buff effect
         resp.eCSTB___Add = 1;
-        int boost = Nanos::getNanoBoost(plr);
         std::vector<ICombatant*> affectedCombatants = applyNanoBuff(skill, plr);
         if(!affectedCombatants.empty()) Abilities::useNanoSkill(sock, nano, affectedCombatants);
     }

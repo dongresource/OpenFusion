@@ -38,6 +38,10 @@ struct EntityRef {
         return id == other.id;
     }
 
+    bool operator!=(const EntityRef& other) const {
+        return !(*this == other);
+    }
+
     // arbitrary ordering
     bool operator<(const EntityRef& other) const {
         if (kind == other.kind) {

@@ -42,7 +42,7 @@ void PlayerManager::removePlayer(CNSocket* key) {
 
     // leave group
     if(plr->group != nullptr)
-        Groups::groupKick(plr);
+        Groups::groupKick(plr->group, key);
 
     // remove player's bullets
     Combat::Bullets.erase(plr->iID);

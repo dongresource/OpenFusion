@@ -802,7 +802,7 @@ static void playerTick(CNServer *serv, time_t currTime) {
 
         // group ticks
         if (plr->group != nullptr)
-            Groups::groupTickInfo(plr);
+            Groups::groupTickInfo(sock);
 
         // do not tick dead players
         if (plr->HP <= 0)
