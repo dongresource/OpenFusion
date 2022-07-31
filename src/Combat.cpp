@@ -48,6 +48,16 @@ void Player::removeBuff(int buffId) {
     }
 }
 
+void Player::removeBuff(int buffId, int buffClass) {
+    if(hasBuff(buffId)) {
+        buffs[buffId]->clear((BuffClass)buffClass);
+        if(buffs[buffId]->isStale()) {
+            delete buffs[buffId];
+            buffs.erase(buffId);
+        }
+    }
+}
+
 bool Player::hasBuff(int buffId) {
     auto buff = buffs.find(buffId);
     return buff != buffs.end() && !buff->second->isStale();
@@ -160,6 +170,8 @@ Buff* CombatNPC::getBuff(int buffId) { /* stubbed */
 }
 
 void CombatNPC::removeBuff(int buffId) { /* stubbed */ }
+
+void CombatNPC::removeBuff(int buffId, int buffClass) { /* stubbed */ }
 
 bool CombatNPC::hasBuff(int buffId) { /* stubbed */
     return false;

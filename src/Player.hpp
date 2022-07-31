@@ -92,6 +92,7 @@ struct Player : public Entity, public ICombatant {
     virtual bool addBuff(int buffId, BuffCallback<int, BuffStack*> onUpdate, BuffCallback<time_t> onTick, BuffStack* stack) override;
     virtual Buff* getBuff(int buffId) override;
     virtual void removeBuff(int buffId) override;
+    virtual void removeBuff(int buffId, int buffClass) override;
     virtual bool hasBuff(int buffId) override;
     virtual int getCompositeCondition() override;
     virtual int takeDamage(EntityRef src, int amt) override;

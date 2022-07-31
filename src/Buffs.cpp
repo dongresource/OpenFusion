@@ -34,6 +34,18 @@ void Buff::clear() {
     }
 }
 
+void Buff::clear(BuffClass buffClass) {
+    auto it = stacks.begin();
+    while(it != stacks.end()) {
+        BuffStack& stack = *it;
+        if(stack.buffStackClass == buffClass) {
+            BuffStack deadStack = stack;
+            it = stacks.erase(it);
+            if(onUpdate) onUpdate(self, this, ETBU_DEL, &deadStack);
+        } else it++;
+    }
+}
+
 void Buff::addStack(BuffStack* stack) {
     stacks.push_back(*stack);
     if(onUpdate) onUpdate(self, this, ETBU_ADD, &stacks.back());

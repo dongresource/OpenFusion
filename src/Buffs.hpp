@@ -54,6 +54,7 @@ public:
     void tick(time_t);
     void combatTick(time_t);
     void clear();
+    void clear(BuffClass buffClass);
     void addStack(BuffStack* stack);
 
     /*
