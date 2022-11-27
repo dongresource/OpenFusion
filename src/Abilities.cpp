@@ -35,7 +35,8 @@ static SkillResult handleSkillDamage(SkillData* skill, int power, ICombatant* so
 static SkillResult handleSkillHealHP(SkillData* skill, int power, ICombatant* source, ICombatant* target) {
     EntityRef sourceRef = source->getRef();
     int heal = skill->values[0][power];
-    int healed = target->heal(sourceRef, heal);
+    double scalingFactor = target->getMaxHP() / 1000.0;
+    int healed = target->heal(sourceRef, heal * scalingFactor);
 
     sSkillResult_Heal_HP result{};
     result.eCT = target->getCharType();
@@ -97,6 +98,7 @@ static SkillResult handleSkillMove(SkillData* skill, int power, ICombatant* sour
     if(source->getCharType() != 1)
         return SkillResult(); // only Players are valid sources for recall
     Player* plr = dynamic_cast<Player*>(source);
+    PlayerManager::sendPlayerTo(source->getRef().sock, plr->recallX, plr->recallY, plr->recallZ, plr->recallInstance);
 
     sSkillResult_Move result{};
     result.eCT = target->getCharType();
@@ -154,20 +156,22 @@ static std::vector<SkillResult> handleSkill(SkillData* skill, int power, ICombat
             resultSize = sizeof(sSkillResult_BatteryDrain);
             skillHandler = handleSkillBatteryDrain;
             break;
-        case EST_RECALL:
-        case EST_RECALL_GROUP:
+        case EST_RECALL: // still soft lock
+        case EST_RECALL_GROUP: // works for player who uses it
             resultSize = sizeof(sSkillResult_Move);
             skillHandler = handleSkillMove;
             break;
-        case EST_PHOENIX_GROUP:
+        case EST_PHOENIX_GROUP: // broken
             resultSize = sizeof(sSkillResult_Resurrect);
             skillHandler = handleSkillResurrect;
             break;
+        case EST_RETROROCKET_SELF:
+            // no-op
+            return results;
         default:
             std::cout << "[WARN] Unhandled skill type " << skill->skillType << std::endl;
             return results;
     }
-    assert(skillHandler != nullptr);
 
     for(ICombatant* target : targets) {
         assert(target != nullptr);
@@ -189,15 +193,21 @@ static void attachSkillResults(std::vector<SkillResult> results, size_t resultSi
     }
 }
 
-void Abilities::useNanoSkill(CNSocket* sock, sNano& nano, std::vector<ICombatant*> affected) {
-    if(SkillTable.count(nano.iSkillID) == 0)
-        return;
+void Abilities::useNanoSkill(CNSocket* sock, SkillData* skill, sNano& nano, std::vector<ICombatant*> affected) {
 
-    SkillData* skill = &SkillTable[nano.iSkillID];
     Player* plr = PlayerManager::getPlayer(sock);
 
-    std::vector<SkillResult> results = handleSkill(skill, Nanos::getNanoBoost(plr), plr, affected);
-    size_t resultSize = results.back().size; // guaranteed to be the same for every item
+    int boost = 0;
+    if (Nanos::getNanoBoost(plr))
+        boost = 3;
+
+    nano.iStamina -= skill->batteryUse[boost];
+    if (nano.iStamina < 0)
+        nano.iStamina = 0;
+
+    std::vector<SkillResult> results = handleSkill(skill, boost, plr, affected);
+    size_t resultSize = 0; // guaranteed to be the same for every item
+    if (!results.empty()) resultSize = results.back().size;
 
     if (!validOutVarPacket(sizeof(sP_FE2CL_NANO_SKILL_USE_SUCC), results.size(), resultSize)) {
         std::cout << "[WARN] bad sP_FE2CL_NANO_SKILL_USE_SUCC packet size\n";
@@ -221,6 +231,9 @@ void Abilities::useNanoSkill(CNSocket* sock, sNano& nano, std::vector<ICombatant
     attachSkillResults(results, resultSize, (uint8_t*)(pkt + 1));
     sock->sendPacket(pkt, P_FE2CL_NANO_SKILL_USE_SUCC, resplen);
     PlayerManager::sendToViewable(sock, pkt, P_FE2CL_NANO_SKILL_USE_SUCC, resplen);
+
+    if (nano.iStamina <= 0)
+        Nanos::summonNano(sock, -1);
 }
 
 void Abilities::useNPCSkill(EntityRef npc, int skillID, std::vector<ICombatant*> affected) {
@@ -257,21 +270,30 @@ void Abilities::useNPCSkill(EntityRef npc, int skillID, std::vector<ICombatant*>
     NPCManager::sendToViewable(entity, pkt, P_FE2CL_NPC_SKILL_HIT, resplen);
 }
 
-std::vector<EntityRef> Abilities::matchTargets(SkillData* skill, int count, int32_t *ids) {
+std::vector<ICombatant*> Abilities::matchTargets(SkillData* skill, int count, int32_t *ids) {
 
-    std::vector<EntityRef> targets;
+    std::vector<ICombatant*> targets;
 
     for (int i = 0; i < count; i++) {
         int32_t id = ids[i];
         if (skill->targetType == SkillTargetType::MOBS) {
-            // mob?
-            if (NPCManager::NPCs.find(id) != NPCManager::NPCs.end()) targets.push_back(id);
-            else std::cout << "[WARN] skill: id not found\n";
-        } else {
-            // player?
-            CNSocket* sock = PlayerManager::getSockFromID(id);
-            if (sock != nullptr) targets.push_back(sock);
-            else std::cout << "[WARN] skill: sock not found\n";
+            // mob
+            if (NPCManager::NPCs.find(id) != NPCManager::NPCs.end()) {
+                BaseNPC* npc = NPCManager::NPCs[id];
+                if (npc->kind == EntityKind::COMBAT_NPC || npc->kind == EntityKind::MOB) {
+                    targets.push_back(dynamic_cast<ICombatant*>(npc));
+                    continue;
+                }
+            }
+            std::cout << "[WARN] skill: invalid mob target (id " << id << ")\n";
+        } else if(skill->targetType == SkillTargetType::SELF || skill->targetType == SkillTargetType::GROUP) {
+            // players (?)
+            Player* plr = PlayerManager::getPlayerFromID(id);
+            if (plr != nullptr) {
+                targets.push_back(dynamic_cast<ICombatant*>(plr));
+                continue;
+            }
+            std::cout << "[WARN] skill: invalid player target (id " << id << ")\n";
         }
     }
 
