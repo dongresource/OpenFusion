@@ -21,7 +21,7 @@ enum class SkillEffectTarget {
 
 enum class SkillTargetType {
     MOBS = 1,
-    SELF = 2,
+    PLAYERS = 2,
     GROUP = 3
 };
 
@@ -63,6 +63,6 @@ namespace Abilities {
     void useNanoSkill(CNSocket*, SkillData*, sNano&, std::vector<ICombatant*>);
     void useNPCSkill(EntityRef, int skillID, std::vector<ICombatant*>);
 
-    std::vector<ICombatant*> matchTargets(SkillData*, int, int32_t*);
+    std::vector<ICombatant*> matchTargets(ICombatant*, SkillData*, int, int32_t*);
     int getCSTBFromST(int eSkillType);
 }

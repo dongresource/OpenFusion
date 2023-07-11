@@ -401,12 +401,11 @@ static void revivePlayer(CNSocket* sock, CNPacketData* data) {
         if (!(plr->hasBuff(ECSB_PHOENIX)))
             return; // sanity check
         plr->Nanos[plr->activeNano].iStamina = 0;
-        // TODO ABILITIES
-        //Abilities::applyBuff(sock, plr->Nanos[plr->activeNano].iSkillID, 2, 1, 0);
         // fallthrough
     case ePCRegenType::HereByPhoenixGroup: // revived by group member's nano
         plr->HP = PC_MAXHEALTH(plr->level) / 2;
         break;
+
     default: // plain respawn
         plr->HP = PC_MAXHEALTH(plr->level) / 2;
         // fallthrough

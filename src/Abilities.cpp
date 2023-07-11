@@ -270,10 +270,30 @@ void Abilities::useNPCSkill(EntityRef npc, int skillID, std::vector<ICombatant*>
     NPCManager::sendToViewable(entity, pkt, P_FE2CL_NPC_SKILL_HIT, resplen);
 }
 
-std::vector<ICombatant*> Abilities::matchTargets(SkillData* skill, int count, int32_t *ids) {
+static std::vector<ICombatant*> entityRefsToCombatants(std::vector<EntityRef> refs) {
+    std::vector<ICombatant*> combatants;
+    for(EntityRef ref : refs) {
+        if(ref.kind == EntityKind::PLAYER)
+            combatants.push_back(dynamic_cast<ICombatant*>(PlayerManager::getPlayer(ref.sock)));
+        else if(ref.kind == EntityKind::COMBAT_NPC || ref.kind == EntityKind::MOB)
+            combatants.push_back(dynamic_cast<ICombatant*>(ref.getEntity()));
+    }
+    return combatants;
+}
 
+std::vector<ICombatant*> Abilities::matchTargets(ICombatant* src, SkillData* skill, int count, int32_t *ids) {
+
+    if(skill->targetType == SkillTargetType::GROUP) {
+        // group
+        if(count != 1 || ids[0] != src->getID()) {
+            std::cout << "[WARN] skill: bad group targeting (id " << ids[0] << ")\n";
+            return {};
+        }
+        return entityRefsToCombatants(src->getGroupMembers());
+    }
+
+    // individuals
     std::vector<ICombatant*> targets;
-
     for (int i = 0; i < count; i++) {
         int32_t id = ids[i];
         if (skill->targetType == SkillTargetType::MOBS) {
@@ -286,8 +306,8 @@ std::vector<ICombatant*> Abilities::matchTargets(SkillData* skill, int count, in
                 }
             }
             std::cout << "[WARN] skill: invalid mob target (id " << id << ")\n";
-        } else if(skill->targetType == SkillTargetType::SELF || skill->targetType == SkillTargetType::GROUP) {
-            // players (?)
+        } else if(skill->targetType == SkillTargetType::PLAYERS) {
+            // player
             Player* plr = PlayerManager::getPlayerFromID(id);
             if (plr != nullptr) {
                 targets.push_back(dynamic_cast<ICombatant*>(plr));

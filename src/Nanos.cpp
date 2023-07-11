@@ -73,16 +73,6 @@ std::vector<ICombatant*> Nanos::applyNanoBuff(SkillData* skill, Player* plr) {
     assert(skill->drainType == SkillDrainType::PASSIVE);
 
     EntityRef self = PlayerManager::getSockFromID(plr->iID);
-    std::vector<ICombatant*> affected;
-    std::vector<EntityRef> targets;
-    if (skill->targetType == SkillTargetType::GROUP) {
-        targets = plr->getGroupMembers(); // group
-    }
-    else if(skill->targetType == SkillTargetType::SELF) {
-        targets.push_back(self); // self
-    } else {
-        std::cout << "[WARN] Passive skill with type " << skill->skillType << " has target type MOB" << std::endl;
-    }
 
     int timeBuffId = Abilities::getCSTBFromST(skill->skillType);
     int boost = Nanos::getNanoBoost(plr) ? 3 : 0;
@@ -95,21 +85,22 @@ std::vector<ICombatant*> Nanos::applyNanoBuff(SkillData* skill, Player* plr) {
         BuffClass::NONE, // overwritten per target
     };
 
-    for (EntityRef target : targets) {
-        Entity* entity = target.getEntity();
-        if (entity->kind != PLAYER && entity->kind != COMBAT_NPC && entity->kind != MOB)
-            continue; // not a combatant
+    // for passive skills, using just the player as a target is fine
+    // this is because the group skill type will ignore the count,
+    // and the other option is single-target
+    std::vector<ICombatant*> targets = Abilities::matchTargets(dynamic_cast<ICombatant*>(plr), skill, 1, &plr->iID);
+    std::vector<ICombatant*> affected;
+    for (ICombatant* target : targets) {
 
-        passiveBuff.buffStackClass = target == self ? BuffClass::NANO : BuffClass::GROUP_NANO;
-        ICombatant* combatant = dynamic_cast<ICombatant*>(entity);
-        if(combatant->addBuff(timeBuffId,
+        passiveBuff.buffStackClass = target == plr ? BuffClass::NANO : BuffClass::GROUP_NANO;
+        if(target->addBuff(timeBuffId,
             [](EntityRef self, Buff* buff, int status, BuffStack* stack) {
                 Buffs::timeBuffUpdate(self, buff, status, stack);
             },
             [](EntityRef self, Buff* buff, time_t currTime) {
                 // no-op
             },
-            &passiveBuff)) affected.push_back(combatant);
+            &passiveBuff)) affected.push_back(target);
     }
 
     return affected;
@@ -317,8 +308,8 @@ static void nanoSkillUseHandler(CNSocket* sock, CNPacketData* data) {
         std::cout << PlayerManager::getPlayerName(plr) << " requested to summon nano skill " << std::endl;
     )
 
-    // TODO ABILITIES
-    std::vector<ICombatant*> targetData = Abilities::matchTargets(skillData, pkt->iTargetCnt, (int32_t*)(pkt + 1));
+    ICombatant* plrCombatant = dynamic_cast<ICombatant*>(plr);
+    std::vector<ICombatant*> targetData = Abilities::matchTargets(plrCombatant, skillData, pkt->iTargetCnt, (int32_t*)(pkt + 1));
     Abilities::useNanoSkill(sock, skillData, nano, targetData);
 
     if (plr->Nanos[plr->activeNano].iStamina < 0)
