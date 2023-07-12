@@ -126,50 +126,50 @@ static std::vector<SkillResult> handleSkill(SkillData* skill, int power, ICombat
 
     switch(skill->skillType)
     {
-        case EST_DAMAGE:
+        case SkillType::DAMAGE:
             resultSize = sizeof(sSkillResult_Damage);
             skillHandler = handleSkillDamage;
             break;
-        case EST_HEAL_HP:
-        case EST_RETURNHOMEHEAL:
+        case SkillType::HEAL_HP:
+        case SkillType::RETURNHOMEHEAL:
             resultSize = sizeof(sSkillResult_Heal_HP);
             skillHandler = handleSkillHealHP;
             break;
-        case EST_JUMP:
-        case EST_RUN:
-        case EST_FREEDOM:
-        case EST_PHOENIX:
-        case EST_INVULNERABLE:
-        case EST_MINIMAPENEMY:
-        case EST_MINIMAPTRESURE:
-        case EST_NANOSTIMPAK:
-        case EST_PROTECTBATTERY:
-        case EST_PROTECTINFECTION:
-        case EST_REWARDBLOB:
-        case EST_REWARDCASH:
-        case EST_STAMINA_SELF:
-        case EST_STEALTH:
+        case SkillType::JUMP:
+        case SkillType::RUN:
+        case SkillType::FREEDOM:
+        case SkillType::PHOENIX:
+        case SkillType::INVULNERABLE:
+        case SkillType::MINIMAPENEMY:
+        case SkillType::MINIMAPTRESURE:
+        case SkillType::NANOSTIMPAK:
+        case SkillType::PROTECTBATTERY:
+        case SkillType::PROTECTINFECTION:
+        case SkillType::REWARDBLOB:
+        case SkillType::REWARDCASH:
+        case SkillType::STAMINA_SELF:
+        case SkillType::STEALTH:
             resultSize = sizeof(sSkillResult_Buff);
             skillHandler = handleSkillBuff;
             break;
-        case EST_BATTERYDRAIN:
+        case SkillType::BATTERYDRAIN:
             resultSize = sizeof(sSkillResult_BatteryDrain);
             skillHandler = handleSkillBatteryDrain;
             break;
-        case EST_RECALL: // still soft lock
-        case EST_RECALL_GROUP: // works for player who uses it
+        case SkillType::RECALL: // still soft lock
+        case SkillType::RECALL_GROUP: // works for player who uses it
             resultSize = sizeof(sSkillResult_Move);
             skillHandler = handleSkillMove;
             break;
-        case EST_PHOENIX_GROUP: // broken
+        case SkillType::PHOENIX_GROUP: // broken
             resultSize = sizeof(sSkillResult_Resurrect);
             skillHandler = handleSkillResurrect;
             break;
-        case EST_RETROROCKET_SELF:
+        case SkillType::RETROROCKET_SELF:
             // no-op
             return results;
         default:
-            std::cout << "[WARN] Unhandled skill type " << skill->skillType << std::endl;
+            std::cout << "[WARN] Unhandled skill type " << (int)skill->skillType << std::endl;
             return results;
     }
 
@@ -178,7 +178,7 @@ static std::vector<SkillResult> handleSkill(SkillData* skill, int power, ICombat
         SkillResult result = skillHandler(skill, power, src != nullptr ? src : target, target);
         if(result.size == 0) continue; // skill not applicable
         if(result.size != resultSize) {
-            std::cout << "[WARN] bad skill result size for " << skill->skillType << " from " << (void*)handleSkillBuff << std::endl;
+            std::cout << "[WARN] bad skill result size for " << (int)skill->skillType << " from " << (void*)handleSkillBuff << std::endl;
             continue;
         }
         results.push_back(result);
@@ -225,7 +225,7 @@ void Abilities::useNanoSkill(CNSocket* sock, SkillData* skill, sNano& nano, std:
     pkt->iSkillID = nano.iSkillID;
     pkt->iNanoStamina = nano.iStamina;
     pkt->bNanoDeactive = nano.iStamina <= 0;
-    pkt->eST = skill->skillType;
+    pkt->eST = (int32_t)skill->skillType;
     pkt->iTargetCnt = (int32_t)results.size();
 
     attachSkillResults(results, resultSize, (uint8_t*)(pkt + 1));
@@ -263,7 +263,7 @@ void Abilities::useNPCSkill(EntityRef npc, int skillID, std::vector<ICombatant*>
     sP_FE2CL_NPC_SKILL_HIT* pkt = (sP_FE2CL_NPC_SKILL_HIT*)respbuf;
     pkt->iNPC_ID = npc.id;
     pkt->iSkillID = skillID;
-    pkt->eST = skill->skillType;
+    pkt->eST = (int32_t)skill->skillType;
     pkt->iTargetCnt = (int32_t)results.size();
 
     attachSkillResults(results, resultSize, (uint8_t*)(pkt + 1));
@@ -324,62 +324,62 @@ std::vector<ICombatant*> Abilities::matchTargets(ICombatant* src, SkillData* ski
 }
 
 /* ripped from client (enums emplaced) */
-int Abilities::getCSTBFromST(int eSkillType) {
+int Abilities::getCSTBFromST(SkillType skillType) {
     int result = 0;
-    switch (eSkillType)
+    switch (skillType)
     {
-    case EST_RUN:
+    case SkillType::RUN:
         result = ECSB_UP_MOVE_SPEED;
         break;
-    case EST_JUMP:
+    case SkillType::JUMP:
         result = ECSB_UP_JUMP_HEIGHT;
         break;
-    case EST_STEALTH:
+    case SkillType::STEALTH:
         result = ECSB_UP_STEALTH;
         break;
-    case EST_PHOENIX:
+    case SkillType::PHOENIX:
         result = ECSB_PHOENIX;
         break;
-    case EST_PROTECTBATTERY:
+    case SkillType::PROTECTBATTERY:
         result = ECSB_PROTECT_BATTERY;
         break;
-    case EST_PROTECTINFECTION:
+    case SkillType::PROTECTINFECTION:
         result = ECSB_PROTECT_INFECTION;
         break;
-    case EST_SNARE:
+    case SkillType::SNARE:
         result = ECSB_DN_MOVE_SPEED;
         break;
-    case EST_SLEEP:
+    case SkillType::SLEEP:
         result = ECSB_MEZ;
         break;
-    case EST_MINIMAPENEMY:
+    case SkillType::MINIMAPENEMY:
         result = ECSB_MINIMAP_ENEMY;
         break;
-    case EST_MINIMAPTRESURE:
+    case SkillType::MINIMAPTRESURE:
         result = ECSB_MINIMAP_TRESURE;
         break;
-    case EST_REWARDBLOB:
+    case SkillType::REWARDBLOB:
         result = ECSB_REWARD_BLOB;
         break;
-    case EST_REWARDCASH:
+    case SkillType::REWARDCASH:
         result = ECSB_REWARD_CASH;
         break;
-    case EST_INFECTIONDAMAGE:
+    case SkillType::INFECTIONDAMAGE:
         result = ECSB_INFECTION;
         break;
-    case EST_FREEDOM:
+    case SkillType::FREEDOM:
         result = ECSB_FREEDOM;
         break;
-    case EST_BOUNDINGBALL:
+    case SkillType::BOUNDINGBALL:
         result = ECSB_BOUNDINGBALL;
         break;
-    case EST_INVULNERABLE:
+    case SkillType::INVULNERABLE:
         result = ECSB_INVULNERABLE;
         break;
-    case EST_BUFFHEAL:
+    case SkillType::BUFFHEAL:
         result = ECSB_HEAL;
         break;
-    case EST_NANOSTIMPAK:
+    case SkillType::NANOSTIMPAK:
         result = ECSB_STIMPAKSLOT1;
         break;
     }
