@@ -338,6 +338,14 @@ static void enterPlayer(CNSocket* sock, CNPacketData* data) {
     delete lm;
 }
 
+void PlayerManager::sendToGroup(CNSocket* sock, void* buf, uint32_t type, size_t size) {
+    Player* plr = getPlayer(sock);
+    if (plr->group == nullptr)
+        return;
+    for(const EntityRef& ref : plr->group->filter(EntityKind::PLAYER))
+        ref.sock->sendPacket(buf, type, size);
+}
+
 void PlayerManager::sendToViewable(CNSocket* sock, void* buf, uint32_t type, size_t size) {
     Player* plr = getPlayer(sock);
     for (auto it = plr->viewableChunks.begin(); it != plr->viewableChunks.end(); it++) {

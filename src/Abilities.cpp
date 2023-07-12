@@ -97,8 +97,13 @@ static SkillResult handleSkillBatteryDrain(SkillData* skill, int power, ICombata
 static SkillResult handleSkillMove(SkillData* skill, int power, ICombatant* source, ICombatant* target) {
     if(source->getCharType() != 1)
         return SkillResult(); // only Players are valid sources for recall
+
     Player* plr = dynamic_cast<Player*>(source);
-    PlayerManager::sendPlayerTo(source->getRef().sock, plr->recallX, plr->recallY, plr->recallZ, plr->recallInstance);
+    if(source == target) {
+        // no trailing struct for self
+        PlayerManager::sendPlayerTo(target->getRef().sock, plr->recallX, plr->recallY, plr->recallZ, plr->recallInstance);
+        return SkillResult();
+    }
 
     sSkillResult_Move result{};
     result.eCT = target->getCharType();
@@ -230,7 +235,12 @@ void Abilities::useNanoSkill(CNSocket* sock, SkillData* skill, sNano& nano, std:
 
     attachSkillResults(results, resultSize, (uint8_t*)(pkt + 1));
     sock->sendPacket(pkt, P_FE2CL_NANO_SKILL_USE_SUCC, resplen);
-    PlayerManager::sendToViewable(sock, pkt, P_FE2CL_NANO_SKILL_USE_SUCC, resplen);
+
+    if(skill->skillType == SkillType::RECALL_GROUP)
+        // group recall packet is sent only to group members
+        PlayerManager::sendToGroup(sock, pkt, P_FE2CL_NANO_SKILL_USE, resplen);
+    else
+        PlayerManager::sendToViewable(sock, pkt, P_FE2CL_NANO_SKILL_USE, resplen);
 
     if (nano.iStamina <= 0)
         Nanos::summonNano(sock, -1);
@@ -283,9 +293,6 @@ static std::vector<ICombatant*> entityRefsToCombatants(std::vector<EntityRef> re
 
 std::vector<ICombatant*> Abilities::matchTargets(ICombatant* src, SkillData* skill, int count, int32_t *ids) {
 
-    if(skill->effectTarget == SkillEffectTarget::SELF)
-        return {src}; // client sends 0 targets for certain self-targeting skills (recall)
-
     if(skill->targetType == SkillTargetType::GROUP) {
         // group
         if(count != 1 || ids[0] != src->getID()) {
@@ -294,6 +301,10 @@ std::vector<ICombatant*> Abilities::matchTargets(ICombatant* src, SkillData* ski
         }
         return entityRefsToCombatants(src->getGroupMembers());
     }
+
+    // this check *has* to happen after the group check above due to cases like group recall that use both
+    if(skill->effectTarget == SkillEffectTarget::SELF)
+        return {src}; // client sends 0 targets for certain self-targeting skills (recall)
 
     // individuals
     std::vector<ICombatant*> targets;
