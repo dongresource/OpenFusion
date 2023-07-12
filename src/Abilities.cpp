@@ -283,6 +283,9 @@ static std::vector<ICombatant*> entityRefsToCombatants(std::vector<EntityRef> re
 
 std::vector<ICombatant*> Abilities::matchTargets(ICombatant* src, SkillData* skill, int count, int32_t *ids) {
 
+    if(skill->effectTarget == SkillEffectTarget::SELF)
+        return {src}; // client sends 0 targets for certain self-targeting skills (recall)
+
     if(skill->targetType == SkillTargetType::GROUP) {
         // group
         if(count != 1 || ids[0] != src->getID()) {
