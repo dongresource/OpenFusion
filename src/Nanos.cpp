@@ -69,43 +69,6 @@ void Nanos::addNano(CNSocket* sock, int16_t nanoID, int16_t slot, bool spendfm) 
     PlayerManager::sendToViewable(sock, resp2, P_FE2CL_REP_PC_CHANGE_LEVEL);
 }
 
-std::vector<ICombatant*> Nanos::applyNanoBuff(SkillData* skill, Player* plr) {
-    assert(skill->drainType == SkillDrainType::PASSIVE);
-
-    EntityRef self = PlayerManager::getSockFromID(plr->iID);
-
-    int timeBuffId = Abilities::getCSTBFromST(skill->skillType);
-    int boost = Nanos::getNanoBoost(plr) ? 3 : 0;
-    int value = skill->values[0][boost];
-
-    BuffStack passiveBuff = {
-        1, // passive nano buffs refreshed every tick
-        value,
-        self,
-        BuffClass::NONE, // overwritten per target
-    };
-
-    // for passive skills, using just the player as a target is fine
-    // this is because the group skill type will ignore the count,
-    // and the other option is single-target
-    std::vector<ICombatant*> targets = Abilities::matchTargets(dynamic_cast<ICombatant*>(plr), skill, 1, &plr->iID);
-    std::vector<ICombatant*> affected;
-    for (ICombatant* target : targets) {
-
-        passiveBuff.buffStackClass = target == plr ? BuffClass::NANO : BuffClass::GROUP_NANO;
-        if(target->addBuff(timeBuffId,
-            [](EntityRef self, Buff* buff, int status, BuffStack* stack) {
-                Buffs::timeBuffUpdate(self, buff, status, stack);
-            },
-            [](EntityRef self, Buff* buff, time_t currTime) {
-                // no-op
-            },
-            &passiveBuff)) affected.push_back(target);
-    }
-
-    return affected;
-}
-
 void Nanos::summonNano(CNSocket *sock, int slot, bool silent) {
     INITSTRUCT(sP_FE2CL_REP_NANO_ACTIVE_SUCC, resp);
     resp.iActiveNanoSlotNum = slot;
@@ -130,8 +93,10 @@ void Nanos::summonNano(CNSocket *sock, int slot, bool silent) {
     if (slot != -1 && skill != nullptr && skill->drainType == SkillDrainType::PASSIVE) {
         // passive buff effect
         resp.eCSTB___Add = 1;
-        std::vector<ICombatant*> affectedCombatants = applyNanoBuff(skill, plr);
-        if(!affectedCombatants.empty()) Abilities::useNanoSkill(sock, skill, nano, affectedCombatants);
+        ICombatant* src = dynamic_cast<ICombatant*>(plr);
+        int32_t targets[] = { plr->iID };
+        std::vector<ICombatant*> affectedCombatants = Abilities::matchTargets(src, skill, 1, targets);
+        Abilities::useNanoSkill(sock, skill, nano, affectedCombatants);
     }
 
     if (!silent) // silent nano death but only for the summoning player
@@ -312,7 +277,7 @@ static void nanoSkillUseHandler(CNSocket* sock, CNPacketData* data) {
     std::vector<ICombatant*> targetData = Abilities::matchTargets(plrCombatant, skillData, pkt->iTargetCnt, (int32_t*)(pkt + 1));
     Abilities::useNanoSkill(sock, skillData, nano, targetData);
 
-    if (plr->Nanos[plr->activeNano].iStamina < 0)
+    if (plr->Nanos[plr->activeNano].iStamina <= 0)
         summonNano(sock, -1);
 }
 

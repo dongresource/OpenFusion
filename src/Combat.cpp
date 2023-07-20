@@ -874,9 +874,12 @@ static void playerTick(CNServer *serv, time_t currTime) {
             if (Abilities::SkillTable.find(nano->iSkillID) != Abilities::SkillTable.end()) {
                 // nano has skill data
                 SkillData* skill = &Abilities::SkillTable[nano->iSkillID];
-                if (skill->drainType == SkillDrainType::PASSIVE)
-                    Nanos::applyNanoBuff(skill, plr);
-                // ^ composite condition calculation is separate from combat for responsiveness
+                if (skill->drainType == SkillDrainType::PASSIVE) {
+                    ICombatant* src = dynamic_cast<ICombatant*>(plr);
+                    int32_t targets[] = { plr->iID };
+                    std::vector<ICombatant*> affectedCombatants = Abilities::matchTargets(src, skill, 1, targets);
+                    Abilities::useNanoSkill(sock, skill, *nano, affectedCombatants);
+                }
             }
         }
 

@@ -57,6 +57,23 @@ static SkillResult handleSkillDamageNDebuff(SkillData* skill, int power, ICombat
 }
 
 static SkillResult handleSkillBuff(SkillData* skill, int power, ICombatant* source, ICombatant* target) {
+    BuffStack passiveBuff = {
+        skill->drainType == SkillDrainType::PASSIVE ? 1 : skill->durationTime[power], // ticks
+        skill->values[0][power], // value
+        source->getRef(), // source
+        source == target ? BuffClass::NANO : BuffClass::GROUP_NANO, // buff class
+    };
+
+    int timeBuffId = Abilities::getCSTBFromST(skill->skillType);
+    if(!target->addBuff(timeBuffId,
+            [](EntityRef self, Buff* buff, int status, BuffStack* stack) {
+                Buffs::timeBuffUpdate(self, buff, status, stack);
+            },
+            [](EntityRef self, Buff* buff, time_t currTime) {
+                // no-op
+            },
+            &passiveBuff)) return SkillResult(); // no result if already buffed
+
     sSkillResult_Buff result{};
     result.eCT = target->getCharType();
     result.iID = target->getID();
@@ -206,14 +223,16 @@ void Abilities::useNanoSkill(CNSocket* sock, SkillData* skill, sNano& nano, std:
     if (Nanos::getNanoBoost(plr))
         boost = 3;
 
-    nano.iStamina -= skill->batteryUse[boost];
-    if (nano.iStamina < 0)
-        nano.iStamina = 0;
+    if(skill->drainType == SkillDrainType::ACTIVE) {
+        nano.iStamina -= skill->batteryUse[boost];
+        if (nano.iStamina <= 0)
+            nano.iStamina = 0;
+    }
 
     std::vector<SkillResult> results = handleSkill(skill, boost, plr, affected);
-    size_t resultSize = 0; // guaranteed to be the same for every item
-    if (!results.empty()) resultSize = results.back().size;
+    if(results.empty()) return; // no effect; no need for confirmation packets
 
+    size_t resultSize = results.back().size; // guaranteed to be the same for every item
     if (!validOutVarPacket(sizeof(sP_FE2CL_NANO_SKILL_USE_SUCC), results.size(), resultSize)) {
         std::cout << "[WARN] bad sP_FE2CL_NANO_SKILL_USE_SUCC packet size\n";
         return;
@@ -241,9 +260,6 @@ void Abilities::useNanoSkill(CNSocket* sock, SkillData* skill, sNano& nano, std:
         PlayerManager::sendToGroup(sock, pkt, P_FE2CL_NANO_SKILL_USE, resplen);
     else
         PlayerManager::sendToViewable(sock, pkt, P_FE2CL_NANO_SKILL_USE, resplen);
-
-    if (nano.iStamina <= 0)
-        Nanos::summonNano(sock, -1);
 }
 
 void Abilities::useNPCSkill(EntityRef npc, int skillID, std::vector<ICombatant*> affected) {
@@ -293,14 +309,8 @@ static std::vector<ICombatant*> entityRefsToCombatants(std::vector<EntityRef> re
 
 std::vector<ICombatant*> Abilities::matchTargets(ICombatant* src, SkillData* skill, int count, int32_t *ids) {
 
-    if(skill->targetType == SkillTargetType::GROUP) {
-        // group
-        if(count != 1 || ids[0] != src->getID()) {
-            std::cout << "[WARN] skill: bad group targeting (id " << ids[0] << ")\n";
-            return {};
-        }
+    if(skill->targetType == SkillTargetType::GROUP)
         return entityRefsToCombatants(src->getGroupMembers());
-    }
 
     // this check *has* to happen after the group check above due to cases like group recall that use both
     if(skill->effectTarget == SkillEffectTarget::SELF)
@@ -392,6 +402,8 @@ int Abilities::getCSTBFromST(SkillType skillType) {
         break;
     case SkillType::NANOSTIMPAK:
         result = ECSB_STIMPAKSLOT1;
+        break;
+    default:
         break;
     }
     return result;
