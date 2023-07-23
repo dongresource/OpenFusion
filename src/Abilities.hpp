@@ -75,8 +75,12 @@ struct SkillResult {
     size_t size;
     uint8_t payload[MAX_SKILLRESULT_SIZE];
     SkillResult(size_t len, void* dat) {
-        size = len;
-        memcpy(payload, dat, len);
+        if(len <= MAX_SKILLRESULT_SIZE) {
+            size = len;
+            memcpy(payload, dat, len);
+        } else {
+            size = 0;
+        }
     }
     SkillResult() {
         size = 0;

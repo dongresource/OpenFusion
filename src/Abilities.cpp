@@ -147,26 +147,22 @@ static SkillResult handleSkillResurrect(SkillData* skill, int power, ICombatant*
 #pragma endregion
 
 static std::vector<SkillResult> handleSkill(SkillData* skill, int power, ICombatant* src, std::vector<ICombatant*> targets) {
-    size_t resultSize = 0;
     SkillResult (*skillHandler)(SkillData*, int, ICombatant*, ICombatant*) = nullptr;
     std::vector<SkillResult> results;
 
     switch(skill->skillType)
     {
         case SkillType::DAMAGE:
-            resultSize = sizeof(sSkillResult_Damage);
             skillHandler = handleSkillDamage;
             break;
         case SkillType::HEAL_HP:
         case SkillType::RETURNHOMEHEAL:
-            resultSize = sizeof(sSkillResult_Heal_HP);
             skillHandler = handleSkillHealHP;
             break;
         case SkillType::KNOCKDOWN:
         case SkillType::SLEEP:
         case SkillType::SNARE:
         case SkillType::STUN:
-            resultSize = sizeof(sSkillResult_Damage_N_Debuff);
             skillHandler = handleSkillDamageNDebuff;
             break;
         case SkillType::JUMP:
@@ -186,26 +182,21 @@ static std::vector<SkillResult> handleSkill(SkillData* skill, int power, ICombat
         case SkillType::STAMINA_SELF:
         case SkillType::NANOSTIMPAK:
         case SkillType::BUFFHEAL:
-            resultSize = sizeof(sSkillResult_Buff);
             skillHandler = handleSkillBuff;
             break;
         case SkillType::BLOODSUCKING:
-            resultSize = sizeof(sSkillResult_Heal_HP);
             skillHandler = handleSkillLeech;
         case SkillType::RETROROCKET_SELF:
             // no-op
             return results;
         case SkillType::PHOENIX_GROUP:
-            resultSize = sizeof(sSkillResult_Resurrect);
             skillHandler = handleSkillResurrect;
             break;
         case SkillType::RECALL:
         case SkillType::RECALL_GROUP:
-            resultSize = sizeof(sSkillResult_Move);
             skillHandler = handleSkillMove;
             break;
         case SkillType::BATTERYDRAIN:
-            resultSize = sizeof(sSkillResult_BatteryDrain);
             skillHandler = handleSkillBatteryDrain;
             break;
         default:
@@ -217,7 +208,7 @@ static std::vector<SkillResult> handleSkill(SkillData* skill, int power, ICombat
         assert(target != nullptr);
         SkillResult result = skillHandler(skill, power, src != nullptr ? src : target, target);
         if(result.size == 0) continue; // skill not applicable
-        if(result.size != resultSize) {
+        if(result.size > MAX_SKILLRESULT_SIZE) {
             std::cout << "[WARN] bad skill result size for " << (int)skill->skillType << " from " << (void*)handleSkillBuff << std::endl;
             continue;
         }
@@ -250,7 +241,7 @@ void Abilities::useNanoSkill(CNSocket* sock, SkillData* skill, sNano& nano, std:
     std::vector<SkillResult> results = handleSkill(skill, boost, plr, affected);
     if(results.empty()) return; // no effect; no need for confirmation packets
 
-    size_t resultSize = results.back().size; // guaranteed to be the same for every item
+    size_t resultSize = MAX_SKILLRESULT_SIZE; // lazy
     if (!validOutVarPacket(sizeof(sP_FE2CL_NANO_SKILL_USE_SUCC), results.size(), resultSize)) {
         std::cout << "[WARN] bad sP_FE2CL_NANO_SKILL_USE_SUCC packet size\n";
         return;
