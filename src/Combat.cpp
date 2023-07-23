@@ -21,6 +21,9 @@ std::map<int32_t, std::map<int8_t, Bullet>> Combat::Bullets;
 
 #pragma region Player
 bool Player::addBuff(int buffId, BuffCallback<int, BuffStack*> onUpdate, BuffCallback<time_t> onTick, BuffStack* stack) {
+    if(!isAlive())
+        return false;
+
     EntityRef self = PlayerManager::getSockFromID(iID);
 
     if(!hasBuff(buffId)) {
