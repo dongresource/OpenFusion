@@ -13,12 +13,12 @@ constexpr size_t MAX_SKILLRESULT_SIZE = sizeof(sSkillResult_BatteryDrain);
 enum class SkillType {
     DAMAGE = 1,
     HEAL_HP = 2,
-    KNOCKDOWN = 3,
-    SLEEP = 4,
-    SNARE = 5,
+    KNOCKDOWN = 3, // dnd
+    SLEEP = 4, // dnd
+    SNARE = 5, // dnd
     HEAL_STAMINA = 6,
     STAMINA_SELF = 7,
-    STUN = 8,
+    STUN = 8, // dnd
     WEAPONSLOW = 9,
     JUMP = 10,
     RUN = 11,

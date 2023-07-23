@@ -56,6 +56,11 @@ static SkillResult handleSkillDamageNDebuff(SkillData* skill, int power, ICombat
     return SkillResult(sizeof(sSkillResult_Damage_N_Debuff), &result);
 }
 
+static SkillResult handleSkillLeech(SkillData* skill, int power, ICombatant* source, ICombatant* target) {
+    // TODO abilities
+    return SkillResult();
+}
+
 static SkillResult handleSkillBuff(SkillData* skill, int power, ICombatant* source, ICombatant* target) {
     BuffStack passiveBuff = {
         skill->drainType == SkillDrainType::PASSIVE ? 1 : skill->durationTime[power], // ticks
@@ -157,39 +162,52 @@ static std::vector<SkillResult> handleSkill(SkillData* skill, int power, ICombat
             resultSize = sizeof(sSkillResult_Heal_HP);
             skillHandler = handleSkillHealHP;
             break;
+        case SkillType::KNOCKDOWN:
+        case SkillType::SLEEP:
+        case SkillType::SNARE:
+        case SkillType::STUN:
+            resultSize = sizeof(sSkillResult_Damage_N_Debuff);
+            skillHandler = handleSkillDamageNDebuff;
+            break;
         case SkillType::JUMP:
         case SkillType::RUN:
-        case SkillType::FREEDOM:
-        case SkillType::PHOENIX:
-        case SkillType::INVULNERABLE:
+        case SkillType::STEALTH:
         case SkillType::MINIMAPENEMY:
         case SkillType::MINIMAPTRESURE:
-        case SkillType::NANOSTIMPAK:
+        case SkillType::PHOENIX:
         case SkillType::PROTECTBATTERY:
         case SkillType::PROTECTINFECTION:
         case SkillType::REWARDBLOB:
         case SkillType::REWARDCASH:
+        // case SkillType::INFECTIONDAMAGE:
+        case SkillType::FREEDOM:
+        case SkillType::BOUNDINGBALL:
+        case SkillType::INVULNERABLE:
         case SkillType::STAMINA_SELF:
-        case SkillType::STEALTH:
+        case SkillType::NANOSTIMPAK:
+        case SkillType::BUFFHEAL:
             resultSize = sizeof(sSkillResult_Buff);
             skillHandler = handleSkillBuff;
+            break;
+        case SkillType::BLOODSUCKING:
+            resultSize = sizeof(sSkillResult_Heal_HP);
+            skillHandler = handleSkillLeech;
+        case SkillType::RETROROCKET_SELF:
+            // no-op
+            return results;
+        case SkillType::PHOENIX_GROUP:
+            resultSize = sizeof(sSkillResult_Resurrect);
+            skillHandler = handleSkillResurrect;
+            break;
+        case SkillType::RECALL:
+        case SkillType::RECALL_GROUP:
+            resultSize = sizeof(sSkillResult_Move);
+            skillHandler = handleSkillMove;
             break;
         case SkillType::BATTERYDRAIN:
             resultSize = sizeof(sSkillResult_BatteryDrain);
             skillHandler = handleSkillBatteryDrain;
             break;
-        case SkillType::RECALL: // still soft lock
-        case SkillType::RECALL_GROUP: // works for player who uses it
-            resultSize = sizeof(sSkillResult_Move);
-            skillHandler = handleSkillMove;
-            break;
-        case SkillType::PHOENIX_GROUP: // broken
-            resultSize = sizeof(sSkillResult_Resurrect);
-            skillHandler = handleSkillResurrect;
-            break;
-        case SkillType::RETROROCKET_SELF:
-            // no-op
-            return results;
         default:
             std::cout << "[WARN] Unhandled skill type " << (int)skill->skillType << std::endl;
             return results;
