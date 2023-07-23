@@ -7,6 +7,7 @@
 
 #include <map>
 #include <vector>
+#include <assert.h>
 
 constexpr size_t MAX_SKILLRESULT_SIZE = sizeof(sSkillResult_BatteryDrain);
 
@@ -75,12 +76,9 @@ struct SkillResult {
     size_t size;
     uint8_t payload[MAX_SKILLRESULT_SIZE];
     SkillResult(size_t len, void* dat) {
-        if(len <= MAX_SKILLRESULT_SIZE) {
-            size = len;
-            memcpy(payload, dat, len);
-        } else {
-            size = 0;
-        }
+        assert(len <= MAX_SKILLRESULT_SIZE);
+        size = len;
+        memcpy(payload, dat, len);
     }
     SkillResult() {
         size = 0;

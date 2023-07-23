@@ -5,8 +5,6 @@
 #include "Buffs.hpp"
 #include "Nanos.hpp"
 
-#include <assert.h>
-
 using namespace Abilities;
 
 std::map<int32_t, SkillData> Abilities::SkillTable;
