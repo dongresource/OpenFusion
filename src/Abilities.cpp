@@ -186,6 +186,7 @@ static std::vector<SkillResult> handleSkill(SkillData* skill, int power, ICombat
             break;
         case SkillType::BLOODSUCKING:
             skillHandler = handleSkillLeech;
+            break;
         case SkillType::RETROROCKET_SELF:
             // no-op
             return results;
