@@ -137,6 +137,18 @@ void Buffs::timeBuffUpdate(EntityRef self, Buff* buff, int status, BuffStack* st
     self.sock->sendPacket((void*)&pkt, P_FE2CL_PC_BUFF_UPDATE, sizeof(sP_FE2CL_PC_BUFF_UPDATE));
 }
 
+void Buffs::timeBuffTick(EntityRef self, Buff* buff) {
+    if(self.kind != EntityKind::COMBAT_NPC && self.kind != EntityKind::MOB)
+        return; // not implemented
+    Entity* entity = self.getEntity();
+    ICombatant* combatant = dynamic_cast<ICombatant*>(entity);
+    INITSTRUCT(sP_FE2CL_CHAR_TIME_BUFF_TIME_TICK, pkt);
+    pkt.eCT = combatant->getCharType();
+    pkt.iID = combatant->getID();
+    pkt.iTB_ID = buff->id;
+    NPCManager::sendToViewable(entity, &pkt, P_FE2CL_CHAR_TIME_BUFF_TIME_TICK, sizeof(sP_FE2CL_CHAR_TIME_BUFF_TIME_TICK));
+}
+
 void Buffs::timeBuffTimeout(EntityRef self) {
     if(self.kind != EntityKind::PLAYER && self.kind != EntityKind::COMBAT_NPC && self.kind != EntityKind::MOB)
         return; // not a combatant

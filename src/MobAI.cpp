@@ -565,8 +565,17 @@ void MobAI::combatStep(CombatNPC* npc, time_t currTime) {
         return;
 
     // tick buffs
-    for(auto buffEntry : self->buffs) {
-        buffEntry.second->combatTick(currTime);
+    auto it = npc->buffs.begin();
+    while(it != npc->buffs.end()) {
+        Buff* buff = (*it).second;
+        buff->combatTick(currTime);
+        buff->tick(currTime);
+        if(buff->isStale()) {
+            // garbage collect
+            it = npc->buffs.erase(it);
+            delete buff;
+        }
+        else it++;
     }
 
     // skip attack if stunned or asleep

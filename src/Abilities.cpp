@@ -1,5 +1,7 @@
 #include "Abilities.hpp"
 
+#include "servers/CNShardServer.hpp"
+
 #include "NPCManager.hpp"
 #include "PlayerManager.hpp"
 #include "Buffs.hpp"
@@ -55,7 +57,7 @@ static SkillResult handleSkillDamageNDebuff(SkillData* skill, int power, ICombat
         duration = skill->durationTime[power];
         strength = skill->values[0][power];
         BuffStack debuff = {
-            duration, // ticks
+            (duration * 100) / MS_PER_COMBAT_TICK, // ticks
             strength, // value
             source->getRef(), // source
             BuffClass::NANO, // buff class
@@ -64,9 +66,10 @@ static SkillResult handleSkillDamageNDebuff(SkillData* skill, int power, ICombat
         target->addBuff(timeBuffId,
             [](EntityRef self, Buff* buff, int status, BuffStack* stack) {
                 Buffs::timeBuffUpdate(self, buff, status, stack);
+                if(status == ETBU_DEL) Buffs::timeBuffTimeout(self);
             },
             [](EntityRef self, Buff* buff, time_t currTime) {
-                // no-op
+                //Buffs::timeBuffTick(self, buff);
             },
             &debuff);
     }
