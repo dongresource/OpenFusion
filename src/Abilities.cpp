@@ -45,11 +45,38 @@ static SkillResult handleSkillHealHP(SkillData* skill, int power, ICombatant* so
 }
 
 static SkillResult handleSkillDamageNDebuff(SkillData* skill, int power, ICombatant* source, ICombatant* target) {
-    // TODO abilities
+    // take aggro
+    target->takeDamage(source->getRef(), 0);
+
+    int duration = 0;
+    int strength = 0;
+    bool blocked = target->hasBuff(ECSB_FREEDOM);
+    if(!blocked) {
+        duration = skill->durationTime[power];
+        strength = skill->values[0][power];
+        BuffStack debuff = {
+            duration, // ticks
+            strength, // value
+            source->getRef(), // source
+            BuffClass::NANO, // buff class
+        };
+        int timeBuffId = Abilities::getCSTBFromST(skill->skillType);
+        target->addBuff(timeBuffId,
+            [](EntityRef self, Buff* buff, int status, BuffStack* stack) {
+                Buffs::timeBuffUpdate(self, buff, status, stack);
+            },
+            [](EntityRef self, Buff* buff, time_t currTime) {
+                // no-op
+            },
+            &debuff);
+    }
+
     sSkillResult_Damage_N_Debuff result{};
+    result.iDamage = duration / 10; // we use the duration as the damage number (why?)
+    result.iHP = target->getCurrentHP();
     result.eCT = target->getCharType();
     result.iID = target->getID();
-    result.bProtected = false;
+    result.bProtected = blocked;
     result.iConditionBitFlag = target->getCompositeCondition();
     return SkillResult(sizeof(sSkillResult_Damage_N_Debuff), &result);
 }
@@ -60,22 +87,24 @@ static SkillResult handleSkillLeech(SkillData* skill, int power, ICombatant* sou
 }
 
 static SkillResult handleSkillBuff(SkillData* skill, int power, ICombatant* source, ICombatant* target) {
+    int duration = skill->durationTime[power];
+    int strength = skill->values[0][power];
     BuffStack passiveBuff = {
-        skill->drainType == SkillDrainType::PASSIVE ? 1 : skill->durationTime[power], // ticks
-        skill->values[0][power], // value
+        skill->drainType == SkillDrainType::PASSIVE ? 1 : duration, // ticks
+        strength, // value
         source->getRef(), // source
         source == target ? BuffClass::NANO : BuffClass::GROUP_NANO, // buff class
     };
 
     int timeBuffId = Abilities::getCSTBFromST(skill->skillType);
     if(!target->addBuff(timeBuffId,
-            [](EntityRef self, Buff* buff, int status, BuffStack* stack) {
-                Buffs::timeBuffUpdate(self, buff, status, stack);
-            },
-            [](EntityRef self, Buff* buff, time_t currTime) {
-                // no-op
-            },
-            &passiveBuff)) return SkillResult(); // no result if already buffed
+        [](EntityRef self, Buff* buff, int status, BuffStack* stack) {
+            Buffs::timeBuffUpdate(self, buff, status, stack);
+        },
+        [](EntityRef self, Buff* buff, time_t currTime) {
+            // no-op
+        },
+        &passiveBuff)) return SkillResult(); // no result if already buffed
 
     sSkillResult_Buff result{};
     result.eCT = target->getCharType();
