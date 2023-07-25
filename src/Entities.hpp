@@ -73,7 +73,6 @@ public:
     int type;
     int hp;
     int angle;
-    int cbf;
     bool loopingPath = false;
 
     BaseNPC(int _A, uint64_t iID, int t, int _id) {
@@ -81,7 +80,6 @@ public:
         type = t;
         hp = 400;
         angle = _A;
-        cbf = 0;
         id = _id;
         instanceID = iID;
     };
@@ -89,7 +87,7 @@ public:
     virtual void enterIntoViewOf(CNSocket *sock) override;
     virtual void disappearFromViewOf(CNSocket *sock) override;
 
-    sNPCAppearanceData getAppearanceData();
+    virtual sNPCAppearanceData getAppearanceData();
 };
 
 struct CombatNPC : public BaseNPC, public ICombatant {
@@ -117,6 +115,8 @@ struct CombatNPC : public BaseNPC, public ICombatant {
         stateHandlers[AIState::INACTIVE] = {};
         transitionHandlers[AIState::INACTIVE] = {};
     }
+
+    virtual sNPCAppearanceData getAppearanceData() override;
 
     virtual bool isExtant() override { return hp > 0; }
 
