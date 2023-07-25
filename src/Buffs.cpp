@@ -155,7 +155,8 @@ void Buffs::timeBuffTimeout(EntityRef self) {
     Entity* entity = self.getEntity();
     ICombatant* combatant = dynamic_cast<ICombatant*>(entity);
     INITSTRUCT(sP_FE2CL_CHAR_TIME_BUFF_TIME_OUT, pkt); // send a buff timeout to other players
-    pkt.eCT = combatant->getCharType();
+    int32_t eCharType = combatant->getCharType();
+    pkt.eCT = eCharType == 4 ? 2 : eCharType; // convention not followed by client here
     pkt.iID = combatant->getID();
     pkt.iConditionBitFlag = combatant->getCompositeCondition();
     NPCManager::sendToViewable(entity, &pkt, P_FE2CL_CHAR_TIME_BUFF_TIME_OUT, sizeof(sP_FE2CL_CHAR_TIME_BUFF_TIME_OUT));

@@ -69,7 +69,7 @@ static SkillResult handleSkillDamageNDebuff(SkillData* skill, int power, ICombat
                 if(status == ETBU_DEL) Buffs::timeBuffTimeout(self);
             },
             [](EntityRef self, Buff* buff, time_t currTime) {
-                //Buffs::timeBuffTick(self, buff);
+                Buffs::timeBuffTick(self, buff);
             },
             &debuff);
     }
