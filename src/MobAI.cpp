@@ -553,17 +553,6 @@ void MobAI::combatStep(CombatNPC* npc, time_t currTime) {
         return;
     }
 
-    // drain TODO abilities
-    if (self->skillStyle < 0 && (self->lastDrainTime == 0 || currTime - self->lastDrainTime >= 1000)
-        && self->hasBuff(ECSB_BOUNDINGBALL)) {
-        drainMobHP(self, self->maxHealth / 20); // lose 5% every second
-        self->lastDrainTime = currTime;
-    }
-
-    // if drain killed the mob, return early
-    if (self->hp <= 0)
-        return;
-
     // tick buffs
     auto it = npc->buffs.begin();
     while(it != npc->buffs.end()) {
@@ -577,6 +566,10 @@ void MobAI::combatStep(CombatNPC* npc, time_t currTime) {
         }
         else it++;
     }
+
+    // if debuffs killed the mob, return early
+    if (self->hp <= 0)
+        return;
 
     // skip attack if stunned or asleep
     if (self->hasBuff(ECSB_STUN) || self->hasBuff(ECSB_MEZ)) {

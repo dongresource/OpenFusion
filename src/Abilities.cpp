@@ -93,19 +93,28 @@ static SkillResult handleSkillBuff(SkillData* skill, int power, ICombatant* sour
     int duration = skill->durationTime[power];
     int strength = skill->values[0][power];
     BuffStack passiveBuff = {
-        skill->drainType == SkillDrainType::PASSIVE ? 1 : duration, // ticks
+        skill->drainType == SkillDrainType::PASSIVE ? 1 : (duration * 100) / MS_PER_COMBAT_TICK, // ticks
         strength, // value
         source->getRef(), // source
         source == target ? BuffClass::NANO : BuffClass::GROUP_NANO, // buff class
     };
 
     int timeBuffId = Abilities::getCSTBFromST(skill->skillType);
+    SkillDrainType drainType = skill->drainType;
     if(!target->addBuff(timeBuffId,
-        [](EntityRef self, Buff* buff, int status, BuffStack* stack) {
+        [drainType](EntityRef self, Buff* buff, int status, BuffStack* stack) {
+            if(buff->id == ECSB_BOUNDINGBALL) {
+                // drain
+                ICombatant* combatant = dynamic_cast<ICombatant*>(self.getEntity());
+                combatant->takeDamage(buff->getLastSource(), 0); // aggro
+            }
             Buffs::timeBuffUpdate(self, buff, status, stack);
+            if(drainType == SkillDrainType::ACTIVE && status == ETBU_DEL)
+                Buffs::timeBuffTimeout(self);
         },
         [](EntityRef self, Buff* buff, time_t currTime) {
-            // no-op
+            if(buff->id == ECSB_BOUNDINGBALL)
+                Buffs::tickDrain(self, buff); // drain
         },
         &passiveBuff)) return SkillResult(); // no result if already buffed
 

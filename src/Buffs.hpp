@@ -66,6 +66,7 @@ public:
     BuffClass maxClass();
 
     int getValue(BuffValueSelector selector);
+    EntityRef getLastSource();
 
     /* 
      * In general, a Buff object won't exist
@@ -88,4 +89,5 @@ namespace Buffs {
     void timeBuffUpdate(EntityRef self, Buff* buff, int status, BuffStack* stack);
     void timeBuffTick(EntityRef self, Buff* buff);
     void timeBuffTimeout(EntityRef self);
+    void tickDrain(EntityRef self, Buff* buff);
 }
