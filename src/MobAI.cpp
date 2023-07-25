@@ -586,6 +586,7 @@ void MobAI::combatStep(CombatNPC* npc, time_t currTime) {
     }
 
     int distanceToTravel = INT_MAX;
+    int speed = self->speed;
     // movement logic: move when out of range but don't move while casting a skill
     if (distance > mobRange && self->skillStyle == -1) {
         if (self->nextMovement != 0 && currTime < self->nextMovement)
@@ -596,7 +597,7 @@ void MobAI::combatStep(CombatNPC* npc, time_t currTime) {
 
         // halve movement speed if snared
         if (self->hasBuff(ECSB_DN_MOVE_SPEED))
-            self->speed /= 2;
+            speed /= 2;
 
         int targetX = plr->x;
         int targetY = plr->y;
@@ -605,9 +606,9 @@ void MobAI::combatStep(CombatNPC* npc, time_t currTime) {
             targetY += self->offsetY*distance/(self->idleRange + 1);
         }
 
-        distanceToTravel = std::min(distance-mobRange+1, self->speed*2/5);
+        distanceToTravel = std::min(distance-mobRange+1, speed*2/5);
         auto targ = lerp(self->x, self->y, targetX, targetY, distanceToTravel);
-        if (distanceToTravel < self->speed*2/5 && currTime >= self->nextAttack)
+        if (distanceToTravel < speed*2/5 && currTime >= self->nextAttack)
             self->nextAttack = 0;
 
         NPCManager::updateNPCPosition(self->id, targ.first, targ.second, self->z, self->instanceID, self->angle);
@@ -615,7 +616,7 @@ void MobAI::combatStep(CombatNPC* npc, time_t currTime) {
         INITSTRUCT(sP_FE2CL_NPC_MOVE, pkt);
 
         pkt.iNPC_ID = self->id;
-        pkt.iSpeed = self->speed;
+        pkt.iSpeed = speed;
         pkt.iToX = self->x = targ.first;
         pkt.iToY = self->y = targ.second;
         pkt.iToZ = plr->z;
