@@ -216,16 +216,18 @@ static std::vector<SkillResult> handleSkill(SkillData* skill, int power, ICombat
     return results;
 }
 
-static void attachSkillResults(std::vector<SkillResult> results, size_t resultSize, uint8_t* pivot) {
+static void attachSkillResults(std::vector<SkillResult> results, uint8_t* pivot) {
     for(SkillResult& result : results) {
-        memcpy(pivot, result.payload, resultSize);
-        pivot += resultSize;
+        size_t sz = result.size;
+        memcpy(pivot, result.payload, sz);
+        pivot += sz;
     }
 }
 
 void Abilities::useNanoSkill(CNSocket* sock, SkillData* skill, sNano& nano, std::vector<ICombatant*> affected) {
 
     Player* plr = PlayerManager::getPlayer(sock);
+    ICombatant* combatant = dynamic_cast<ICombatant*>(plr);
 
     int boost = 0;
     if (Nanos::getNanoBoost(plr))
@@ -237,17 +239,19 @@ void Abilities::useNanoSkill(CNSocket* sock, SkillData* skill, sNano& nano, std:
             nano.iStamina = 0;
     }
 
-    std::vector<SkillResult> results = handleSkill(skill, boost, plr, affected);
+    std::vector<SkillResult> results = handleSkill(skill, boost, combatant, affected);
     if(results.empty()) return; // no effect; no need for confirmation packets
 
-    size_t resultSize = MAX_SKILLRESULT_SIZE; // lazy
-    if (!validOutVarPacket(sizeof(sP_FE2CL_NANO_SKILL_USE_SUCC), results.size(), resultSize)) {
+    // lazy validation since skill results might be different sizes
+    if (!validOutVarPacket(sizeof(sP_FE2CL_NANO_SKILL_USE_SUCC), results.size(), MAX_SKILLRESULT_SIZE)) {
         std::cout << "[WARN] bad sP_FE2CL_NANO_SKILL_USE_SUCC packet size\n";
         return;
     }
 
     // initialize response struct
-    size_t resplen = sizeof(sP_FE2CL_NANO_SKILL_USE_SUCC) + results.size() * resultSize;
+    size_t resplen = sizeof(sP_FE2CL_NANO_SKILL_USE_SUCC);
+    for(SkillResult& sr : results)
+        resplen += sr.size;
     uint8_t respbuf[CN_PACKET_BUFFER_SIZE];
     memset(respbuf, 0, resplen);
 
@@ -260,7 +264,7 @@ void Abilities::useNanoSkill(CNSocket* sock, SkillData* skill, sNano& nano, std:
     pkt->eST = (int32_t)skill->skillType;
     pkt->iTargetCnt = (int32_t)results.size();
 
-    attachSkillResults(results, resultSize, (uint8_t*)(pkt + 1));
+    attachSkillResults(results, (uint8_t*)(pkt + 1));
     sock->sendPacket(pkt, P_FE2CL_NANO_SKILL_USE_SUCC, resplen);
 
     if(skill->skillType == SkillType::RECALL_GROUP)
@@ -284,15 +288,16 @@ void Abilities::useNPCSkill(EntityRef npc, int skillID, std::vector<ICombatant*>
     std::vector<SkillResult> results = handleSkill(skill, 0, src, affected);
     if(results.empty()) return; // no effect; no need for confirmation packets
 
-    size_t resultSize = results.back().size; // guaranteed to be the same for every item
-
-    if (!validOutVarPacket(sizeof(sP_FE2CL_NPC_SKILL_HIT), results.size(), resultSize)) {
+    // lazy validation since skill results might be different sizes
+    if (!validOutVarPacket(sizeof(sP_FE2CL_NPC_SKILL_HIT), results.size(), MAX_SKILLRESULT_SIZE)) {
         std::cout << "[WARN] bad sP_FE2CL_NPC_SKILL_HIT packet size\n";
         return;
     }
 
     // initialize response struct
-    size_t resplen = sizeof(sP_FE2CL_NPC_SKILL_HIT) + results.size() * resultSize;
+    size_t resplen = sizeof(sP_FE2CL_NPC_SKILL_HIT);
+    for(SkillResult& sr : results)
+        resplen += sr.size;
     uint8_t respbuf[CN_PACKET_BUFFER_SIZE];
     memset(respbuf, 0, resplen);
 
@@ -302,7 +307,7 @@ void Abilities::useNPCSkill(EntityRef npc, int skillID, std::vector<ICombatant*>
     pkt->eST = (int32_t)skill->skillType;
     pkt->iTargetCnt = (int32_t)results.size();
 
-    attachSkillResults(results, resultSize, (uint8_t*)(pkt + 1));
+    attachSkillResults(results, (uint8_t*)(pkt + 1));
     NPCManager::sendToViewable(entity, pkt, P_FE2CL_NPC_SKILL_HIT, resplen);
 }
 
