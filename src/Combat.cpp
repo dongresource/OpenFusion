@@ -24,13 +24,11 @@ bool Player::addBuff(int buffId, BuffCallback<int, BuffStack*> onUpdate, BuffCal
     if(!isAlive())
         return false;
 
-    EntityRef self = PlayerManager::getSockFromID(iID);
-
     if(!hasBuff(buffId)) {
-        buffs[buffId] = new Buff(buffId, self, onUpdate, onTick, stack);
+        buffs[buffId] = new Buff(buffId, getRef(), onUpdate, onTick, stack);
         return true;
     }
-    
+
     buffs[buffId]->updateCallbacks(onUpdate, onTick);
     buffs[buffId]->addStack(stack);
     return false;
@@ -177,25 +175,68 @@ void Player::step(time_t currTime) {
 
 #pragma region CombatNPC
 bool CombatNPC::addBuff(int buffId, BuffCallback<int, BuffStack*> onUpdate, BuffCallback<time_t> onTick, BuffStack* stack) { /* stubbed */
+    if(!isAlive())
+        return false;
+
+    if(!hasBuff(buffId)) {
+        buffs[buffId] = new Buff(buffId, getRef(), onUpdate, onTick, stack);
+        return true;
+    }
+
+    buffs[buffId]->updateCallbacks(onUpdate, onTick);
+    buffs[buffId]->addStack(stack);
     return false;
 }
 
 Buff* CombatNPC::getBuff(int buffId) { /* stubbed */
+    if(hasBuff(buffId)) {
+        return buffs[buffId];
+    }
     return nullptr;
 }
 
-void CombatNPC::removeBuff(int buffId) { /* stubbed */ }
-
-void CombatNPC::removeBuff(int buffId, int buffClass) { /* stubbed */ }
-
-void CombatNPC::clearBuffs(bool force) { /* stubbed */ }
-
-bool CombatNPC::hasBuff(int buffId) { /* stubbed */
-    return false;
+void CombatNPC::removeBuff(int buffId) {
+    if(hasBuff(buffId)) {
+        buffs[buffId]->clear();
+        delete buffs[buffId];
+        buffs.erase(buffId);
+    }
 }
 
-int CombatNPC::getCompositeCondition() { /* stubbed */
-    return 0;
+void CombatNPC::removeBuff(int buffId, int buffClass) {
+    if(hasBuff(buffId)) {
+        buffs[buffId]->clear((BuffClass)buffClass);
+        // buff might not be stale since another buff class might remain
+        if(buffs[buffId]->isStale()) {
+            delete buffs[buffId];
+            buffs.erase(buffId);
+        }
+    }
+}
+
+void CombatNPC::clearBuffs(bool force) {
+    for(auto buff : buffs) {
+        if(!force) {
+            removeBuff(buff.first);
+        } else {
+            delete buff.second;
+        }
+    }
+    buffs.clear();
+}
+
+bool CombatNPC::hasBuff(int buffId) {
+    auto buff = buffs.find(buffId);
+    return buff != buffs.end() && !buff->second->isStale();
+}
+
+int CombatNPC::getCompositeCondition() {
+    int conditionBitFlag = 0;
+    for(auto buff : buffs) {
+        if(!buff.second->isStale() && buff.second->id > 0)
+            conditionBitFlag |= CSB_FROM_ECSB(buff.first);
+    }
+    return conditionBitFlag;
 }
 
 int CombatNPC::takeDamage(EntityRef src, int amt) {
