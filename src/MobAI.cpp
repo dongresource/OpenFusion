@@ -441,6 +441,7 @@ static void useAbilities(Mob *mob, time_t currTime) {
     return;
 }
 
+// TODO abiilities
 static void drainMobHP(Mob *mob, int amount) {
     size_t resplen = sizeof(sP_FE2CL_CHAR_TIME_BUFF_TIME_TICK) + sizeof(sSkillResult_Damage);
     assert(resplen < CN_PACKET_BUFFER_SIZE - 8);
@@ -552,7 +553,7 @@ void MobAI::combatStep(CombatNPC* npc, time_t currTime) {
         return;
     }
 
-    // drain
+    // drain TODO abilities
     if (self->skillStyle < 0 && (self->lastDrainTime == 0 || currTime - self->lastDrainTime >= 1000)
         && self->hasBuff(ECSB_BOUNDINGBALL)) {
         drainMobHP(self, self->maxHealth / 20); // lose 5% every second
@@ -563,10 +564,10 @@ void MobAI::combatStep(CombatNPC* npc, time_t currTime) {
     if (self->hp <= 0)
         return;
 
-    // tick buffs TODO abilities
-    //for(auto buffEntry : self->buffs) {
-    //    buffEntry.second->combatTick(currTime);
-    //}
+    // tick buffs
+    for(auto buffEntry : self->buffs) {
+        buffEntry.second->combatTick(currTime);
+    }
 
     // skip attack if stunned or asleep
     if (self->hasBuff(ECSB_STUN) || self->hasBuff(ECSB_MEZ)) {
