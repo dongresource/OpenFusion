@@ -414,12 +414,6 @@ int Abilities::getCSTBFromST(SkillType skillType) {
     case SkillType::PROTECTINFECTION:
         result = ECSB_PROTECT_INFECTION;
         break;
-    case SkillType::SNARE:
-        result = ECSB_DN_MOVE_SPEED;
-        break;
-    case SkillType::SLEEP:
-        result = ECSB_MEZ;
-        break;
     case SkillType::MINIMAPENEMY:
         result = ECSB_MINIMAP_ENEMY;
         break;
@@ -432,14 +426,8 @@ int Abilities::getCSTBFromST(SkillType skillType) {
     case SkillType::REWARDCASH:
         result = ECSB_REWARD_CASH;
         break;
-    case SkillType::INFECTIONDAMAGE:
-        result = ECSB_INFECTION;
-        break;
     case SkillType::FREEDOM:
         result = ECSB_FREEDOM;
-        break;
-    case SkillType::BOUNDINGBALL:
-        result = ECSB_BOUNDINGBALL;
         break;
     case SkillType::INVULNERABLE:
         result = ECSB_INVULNERABLE;
@@ -449,6 +437,22 @@ int Abilities::getCSTBFromST(SkillType skillType) {
         break;
     case SkillType::NANOSTIMPAK:
         result = ECSB_STIMPAKSLOT1;
+        // shift as necessary
+        break;
+    case SkillType::SNARE:
+        result = ECSB_DN_MOVE_SPEED;
+        break;
+    case SkillType::STUN:
+        result = ECSB_STUN;
+        break;
+    case SkillType::SLEEP:
+        result = ECSB_MEZ;
+        break;
+    case SkillType::INFECTIONDAMAGE:
+        result = ECSB_INFECTION;
+        break;
+    case SkillType::BOUNDINGBALL:
+        result = ECSB_BOUNDINGBALL;
         break;
     default:
         break;
