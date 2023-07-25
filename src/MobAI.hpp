@@ -41,7 +41,6 @@ struct Mob : public CombatNPC {
     time_t lastDrainTime = 0;
     int skillStyle = -1; // -1 for nothing, 0-2 for corruption, -2 for eruption
     int hitX = 0, hitY = 0, hitZ = 0; // for use in ability targeting
-    std::unordered_map<int, Buff*> buffs = {};
 
     // group
     int groupLeader = 0;

@@ -104,6 +104,8 @@ struct CombatNPC : public BaseNPC, public ICombatant {
     std::map<AIState, void (*)(CombatNPC*, time_t)> stateHandlers;
     std::map<AIState, void (*)(CombatNPC*, EntityRef)> transitionHandlers;
 
+    std::unordered_map<int, Buff*> buffs = {};
+
     CombatNPC(int x, int y, int z, int angle, uint64_t iID, int t, int id, int maxHP)
         : BaseNPC(angle, iID, t, id), maxHealth(maxHP) {
         spawnX = x;
