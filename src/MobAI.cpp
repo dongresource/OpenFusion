@@ -441,32 +441,6 @@ static void useAbilities(Mob *mob, time_t currTime) {
     return;
 }
 
-// TODO abiilities
-static void drainMobHP(Mob *mob, int amount) {
-    size_t resplen = sizeof(sP_FE2CL_CHAR_TIME_BUFF_TIME_TICK) + sizeof(sSkillResult_Damage);
-    assert(resplen < CN_PACKET_BUFFER_SIZE - 8);
-    uint8_t respbuf[CN_PACKET_BUFFER_SIZE];
-
-    memset(respbuf, 0, resplen);
-
-    sP_FE2CL_CHAR_TIME_BUFF_TIME_TICK *pkt = (sP_FE2CL_CHAR_TIME_BUFF_TIME_TICK*)respbuf;
-    sSkillResult_Damage *drain = (sSkillResult_Damage*)(respbuf + sizeof(sP_FE2CL_CHAR_TIME_BUFF_TIME_TICK));
-
-    pkt->iID = mob->id;
-    pkt->eCT = 4; // mob
-    pkt->iTB_ID = ECSB_BOUNDINGBALL;
-
-    drain->eCT = 4;
-    drain->iID = mob->id;
-    drain->iDamage = amount;
-    drain->iHP = mob->hp -= amount;
-
-    NPCManager::sendToViewable(mob, (void*)&respbuf, P_FE2CL_CHAR_TIME_BUFF_TIME_TICK, resplen);
-
-    if (mob->hp <= 0)
-        mob->transition(AIState::DEAD, mob->target);
-}
-
 void MobAI::incNextMovement(Mob* mob, time_t currTime) {
     if (currTime == 0)
         currTime = getTime();
@@ -558,6 +532,11 @@ void MobAI::combatStep(CombatNPC* npc, time_t currTime) {
     while(it != npc->buffs.end()) {
         Buff* buff = (*it).second;
         buff->combatTick(currTime);
+
+        // if mob state changed, end the step
+        if(self->state != AIState::COMBAT)
+            return;
+
         buff->tick(currTime);
         if(buff->isStale()) {
             // garbage collect
@@ -566,10 +545,6 @@ void MobAI::combatStep(CombatNPC* npc, time_t currTime) {
         }
         else it++;
     }
-
-    // if debuffs killed the mob, return early
-    if (self->hp <= 0)
-        return;
 
     // skip attack if stunned or asleep
     if (self->hasBuff(ECSB_STUN) || self->hasBuff(ECSB_MEZ)) {
