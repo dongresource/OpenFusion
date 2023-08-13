@@ -169,6 +169,8 @@ void Player::step(time_t currTime) {
     // buffs
     for(auto buffEntry : buffs) {
         buffEntry.second->combatTick(currTime);
+        if(!isAlive())
+            break; // unsafe to keep ticking if we're dead
     }
 }
 #pragma endregion
@@ -957,6 +959,7 @@ static void playerTick(CNServer *serv, time_t currTime) {
         auto it = plr->buffs.begin();
         while(it != plr->buffs.end()) {
             Buff* buff = (*it).second;
+            //buff->combatTick() gets called in Player::step
             buff->tick(currTime);
             if(buff->isStale()) {
                 // garbage collect
