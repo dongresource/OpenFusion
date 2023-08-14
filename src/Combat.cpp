@@ -61,14 +61,13 @@ void Player::removeBuff(int buffId, BuffClass buffClass) {
 }
 
 void Player::clearBuffs(bool force) {
-    for(auto buff : buffs) {
-        if(!force) {
-            removeBuff(buff.first);
-        } else {
-            delete buff.second;
-        }
+    auto it = buffs.begin();
+    while(it != buffs.end()) {
+        Buff* buff = (*it).second;
+        if(!force) buff->clear();
+        delete buff;
+        it = buffs.erase(it);
     }
-    buffs.clear();
 }
 
 bool Player::hasBuff(int buffId) {
@@ -217,14 +216,13 @@ void CombatNPC::removeBuff(int buffId, BuffClass buffClass) {
 }
 
 void CombatNPC::clearBuffs(bool force) {
-    for(auto buff : buffs) {
-        if(!force) {
-            removeBuff(buff.first);
-        } else {
-            delete buff.second;
-        }
+    auto it = buffs.begin();
+    while(it != buffs.end()) {
+        Buff* buff = (*it).second;
+        if(!force) buff->clear();
+        delete buff;
+        it = buffs.erase(it);
     }
-    buffs.clear();
 }
 
 bool CombatNPC::hasBuff(int buffId) {
