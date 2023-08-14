@@ -85,8 +85,26 @@ static SkillResult handleSkillDamageNDebuff(SkillData* skill, int power, ICombat
 }
 
 static SkillResult handleSkillLeech(SkillData* skill, int power, ICombatant* source, ICombatant* target) {
-    // TODO abilities
-    return SkillResult();
+    EntityRef sourceRef = source->getRef();
+    int heal = skill->values[0][power];
+    int healed = source->heal(sourceRef, heal);
+    int damage = heal * 2;
+    int dealt = target->takeDamage(sourceRef, damage);
+
+    sSkillResult_Leech result{};
+
+    result.Damage.eCT = target->getCharType();
+    result.Damage.iID = target->getID();
+    result.Damage.bProtected = dealt <= 0;
+    result.Damage.iDamage = dealt;
+    result.Damage.iHP = target->getCurrentHP();
+
+    result.Heal.eCT = result.Damage.eCT;
+    result.Heal.iID = result.Damage.iID;
+    result.Heal.iHealHP = healed;
+    result.Heal.iHP = source->getCurrentHP();
+
+    return SkillResult(sizeof(sSkillResult_Leech), &result);
 }
 
 static SkillResult handleSkillBuff(SkillData* skill, int power, ICombatant* source, ICombatant* target) {
