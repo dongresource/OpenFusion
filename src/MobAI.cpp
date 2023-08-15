@@ -762,12 +762,9 @@ void MobAI::onCombatStart(CombatNPC* npc, EntityRef src) {
     self->roamY = self->y;
     self->roamZ = self->z;
 
-    int skillID = (int)self->data["m_iPassiveBuff"]; // cast passive
-    // TODO ABILITIES
-    /*std::vector<int> targetData = { 1, self->id, 0, 0, 0 };
-    for (auto& pwr : Abilities::Powers)
-        if (pwr.skillType == Abilities::SkillTable[skillID].skillType)
-            pwr.handle(self->id, targetData, skillID, Abilities::SkillTable[skillID].durationTime[0], Abilities::SkillTable[skillID].powerIntensity[0]);*/
+    int skillID = (int)self->data["m_iPassiveBuff"];
+    if(skillID != 0) // cast passive
+        Abilities::useNPCSkill(npc->getRef(), skillID, { npc });
 }
 
 void MobAI::onRetreat(CombatNPC* npc, EntityRef src) {
