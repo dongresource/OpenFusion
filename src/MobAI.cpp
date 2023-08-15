@@ -741,11 +741,8 @@ void MobAI::onRoamStart(CombatNPC* npc, EntityRef src) {
     self->nextAttack = 0;
 
     // cast a return home heal spell, this is the right way(tm)
-    // TODO ABILITIES
-    /*std::vector<int> targetData = { 1, 0, 0, 0, 0 };
-    for (auto& pwr : Abilities::Powers)
-        if (pwr.skillType == Abilities::SkillTable[110].skillType)
-            pwr.handle(self->id, targetData, 110, Abilities::SkillTable[110].durationTime[0], Abilities::SkillTable[110].powerIntensity[0]);*/
+    Abilities::useNPCSkill(npc->getRef(), 110, { npc });
+
     // clear outlying debuffs
     clearDebuff(self);
 }
