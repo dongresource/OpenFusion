@@ -326,12 +326,6 @@ static void dealCorruption(Mob *mob, std::vector<int> targetData, int skillID, i
 }
 
 static void useAbilities(Mob *mob, time_t currTime) {
-    /*
-     * targetData approach
-     * first integer is the count
-     * second to fifth integers are IDs, these can be either player iID or mob's iID
-     * whether the skill targets players or mobs is determined by the skill packet being fired
-     */
     Player *plr = PlayerManager::getPlayer(mob->target);
 
     if (mob->skillStyle >= 0) { // corruption hit
@@ -389,14 +383,11 @@ static void useAbilities(Mob *mob, time_t currTime) {
 
     if (random < prob1) { // active skill hit
         int skillID = (int)mob->data["m_iActiveSkill1"];
-        // TODO ABILITIES
-        //std::vector<int> targetData = {1, plr->iID, 0, 0, 0};
-        //for (auto& pwr : Abilities::Powers)
-        //    if (pwr.skillType == Abilities::SkillTable[skillID].skillType) {
-        //        if (pwr.bitFlag != 0 && (plr->iConditionBitFlag & pwr.bitFlag))
-        //            return; // prevent debuffing a player twice
-        //        pwr.handle(mob->id, targetData, skillID, Abilities::SkillTable[skillID].durationTime[0], Abilities::SkillTable[skillID].powerIntensity[0]);
-        //    }
+        SkillData* skill = &Abilities::SkillTable[skillID];
+        int debuffID = Abilities::getCSTBFromST(skill->skillType);
+        if(plr->hasBuff(debuffID))
+            return; // prevent debuffing a player twice
+        Abilities::useNPCSkill(mob->getRef(), skillID, { plr });
         mob->nextAttack = currTime + (int)mob->data["m_iDelayTime"] * 100;
         return;
     }
