@@ -346,7 +346,7 @@ static void useAbilities(Mob *mob, time_t currTime) {
 
     if (mob->skillStyle == -2) { // eruption hit
         int skillID = (int)mob->data["m_iMegaType"];
-        std::vector<int> targetData = {0, 0, 0, 0, 0};
+        std::vector<ICombatant*> targets{};
 
         // find the players within range of eruption
         for (auto it = mob->viewableChunks.begin(); it != mob->viewableChunks.end(); it++) {
@@ -356,26 +356,22 @@ static void useAbilities(Mob *mob, time_t currTime) {
                 if (ref.kind != EntityKind::PLAYER)
                     continue;
 
-                CNSocket *s= ref.sock;
+                CNSocket *s = ref.sock;
                 Player *plr = PlayerManager::getPlayer(s);
 
-                if (plr->HP <= 0)
+                if (!plr->isAlive())
                     continue;
 
                 int distance = hypot(mob->hitX - plr->x, mob->hitY - plr->y);
                 if (distance < Abilities::SkillTable[skillID].effectArea) {
-                    targetData[0] += 1;
-                    targetData[targetData[0]] = plr->iID;
-                    if (targetData[0] > 3) // make sure not to have more than 4
+                    targets.push_back(plr);
+                    if (targets.size() > 3) // make sure not to have more than 4
                         break;
                 }
             }
         }
 
-        // TODO ABILITIES
-        /*for (auto& pwr : Abilities::Powers)
-            if (pwr.skillType == Abilities::SkillTable[skillID].skillType)
-                pwr.handle(mob->id, targetData, skillID, Abilities::SkillTable[skillID].durationTime[0], Abilities::SkillTable[skillID].powerIntensity[0]);*/
+        Abilities::useNPCSkill(mob->id, skillID, targets);
         mob->skillStyle = -3; // eruption cooldown
         mob->nextAttack = currTime + 1000;
         return;

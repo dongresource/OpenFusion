@@ -6,6 +6,7 @@
 #include "PlayerManager.hpp"
 #include "Buffs.hpp"
 #include "Nanos.hpp"
+#include "MobAI.hpp"
 
 using namespace Abilities;
 
@@ -364,6 +365,12 @@ void Abilities::useNPCSkill(EntityRef npc, int skillID, std::vector<ICombatant*>
     pkt->iSkillID = skillID;
     pkt->eST = (int32_t)skill->skillType;
     pkt->iTargetCnt = (int32_t)results.size();
+    if(npc.kind == EntityKind::MOB) {
+        Mob* mob = dynamic_cast<Mob*>(entity);
+        pkt->iValue1 = mob->hitX;
+        pkt->iValue2 = mob->hitY;
+        pkt->iValue3 = mob->hitZ;
+    }
 
     attachSkillResults(results, (uint8_t*)(pkt + 1));
     NPCManager::sendToViewable(entity, pkt, P_FE2CL_NPC_SKILL_HIT, resplen);
