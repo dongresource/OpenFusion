@@ -295,11 +295,13 @@ static void dealCorruption(Mob *mob, std::vector<int> targetData, int skillID, i
             if (plr->Nanos[plr->activeNano].iStamina > 150)
                 respdata[i].iNanoStamina = plr->Nanos[plr->activeNano].iStamina = 150;
             // fire damage power disguised as a corruption attack back at the enemy
-            // TODO ABILITIES
-            /*std::vector<int> targetData2 = {1, mob->id, 0, 0, 0};
-            for (auto& pwr : Abilities::Powers)
-                if (pwr.skillType == EST_DAMAGE)
-                    pwr.handle(sock, targetData2, plr->activeNano, skillID, 0, 200);*/
+            SkillData skill = Abilities::SkillTable[skillID];
+            skill.durationTime[0] = 0;
+            skill.values[0][0] = 200; // have to set
+            skill.values[0][1] = 200; // all of these
+            skill.values[0][2] = 200; // because the player might
+            skill.values[0][3] = 200; // have a boost
+            Abilities::useNanoSkill(sock, &skill, *plr->getActiveNano(), { mob });
         } else {
             respdata[i].iHitFlag = HF_BIT_STYLE_LOSE;
             respdata[i].iDamage = Abilities::SkillTable[skillID].values[0][0] * PC_MAXHEALTH((int)mob->data["m_iNpcLevel"]) / 1500;
