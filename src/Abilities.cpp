@@ -127,6 +127,7 @@ static SkillResult handleSkillBuff(SkillData* skill, int power, ICombatant* sour
                 ICombatant* combatant = dynamic_cast<ICombatant*>(self.getEntity());
                 combatant->takeDamage(buff->getLastSource(), 0); // aggro
             }
+            Buffs::timeBuffUpdate(self, buff, status, stack);
             if(drainType == SkillDrainType::ACTIVE && status == ETBU_DEL)
                 Buffs::timeBuffTimeout(self);
         },
