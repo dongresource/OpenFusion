@@ -155,7 +155,7 @@ static SkillResult handleSkillBatteryDrain(SkillData* skill, int power, ICombata
 
     int boostDrain = 0;
     int potionDrain = 0;
-    if(blocked) {
+    if(!blocked) {
         boostDrain = (int)(skill->values[0][power] * scalingFactor);
         if(boostDrain > plr->batteryW) boostDrain = plr->batteryW;
         plr->batteryW -= boostDrain;
