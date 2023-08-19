@@ -227,7 +227,7 @@ bool MobAI::aggroCheck(Mob *mob, time_t currTime) {
     return false;
 }
 
-static void dealCorruption(Mob *mob, std::vector<int> targetData, int skillID, int style) {
+static void dealCorruption(Mob *mob, std::vector<int> targetData, int skillID, int mobStyle) {
     Player *plr = PlayerManager::getPlayer(mob->target);
 
     size_t resplen = sizeof(sP_FE2CL_NPC_SKILL_CORRUPTION_HIT) + targetData[0] * sizeof(sCAttackResult);
@@ -246,7 +246,7 @@ static void dealCorruption(Mob *mob, std::vector<int> targetData, int skillID, i
 
     resp->iNPC_ID = mob->id;
     resp->iSkillID = skillID;
-    resp->iStyle = style;
+    resp->iStyle = mobStyle;
     resp->iValue1 = plr->x;
     resp->iValue2 = plr->y;
     resp->iValue3 = plr->z;
@@ -280,15 +280,15 @@ static void dealCorruption(Mob *mob, std::vector<int> targetData, int skillID, i
                 respdata[i].iActiveNanoSlotNum = n;
         respdata[i].iNanoID = plr->activeNano;
 
-        int style2 = Nanos::nanoStyle(plr->activeNano);
-        if (style2 == -1) { // no nano
+        int nanoStyle = Nanos::nanoStyle(plr->activeNano);
+        if (nanoStyle == -1) { // no nano
             respdata[i].iHitFlag = HF_BIT_STYLE_TIE;
             respdata[i].iDamage = Abilities::SkillTable[skillID].values[0][0] * PC_MAXHEALTH((int)mob->data["m_iNpcLevel"]) / 1500;
-        } else if (style == style2) {
+        } else if (mobStyle == nanoStyle) {
             respdata[i].iHitFlag = HF_BIT_STYLE_TIE;
             respdata[i].iDamage = 0;
             respdata[i].iNanoStamina = plr->Nanos[plr->activeNano].iStamina;
-        } else if (style - style2 == 1 || style2 - style == 2) {
+        } else if (mobStyle - nanoStyle == 1 || nanoStyle - mobStyle == 2) {
             respdata[i].iHitFlag = HF_BIT_STYLE_WIN;
             respdata[i].iDamage = 0;
             respdata[i].iNanoStamina = plr->Nanos[plr->activeNano].iStamina += 45;

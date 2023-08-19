@@ -215,6 +215,9 @@ static std::vector<SkillResult> handleSkill(SkillData* skill, int power, ICombat
 
     switch(skill->skillType)
     {
+        case SkillType::CORRUPTIONATTACK:
+        case SkillType::CORRUPTIONATTACKLOSE:
+        case SkillType::CORRUPTIONATTACKWIN:
         case SkillType::DAMAGE:
             skillHandler = handleSkillDamage;
             break;
